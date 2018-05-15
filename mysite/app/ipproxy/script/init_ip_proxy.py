@@ -3,12 +3,19 @@ import os
 # 导入Django
 import django
 import requests
+from bs4 import BeautifulSoup
 
 def doAction(self, id):
 
     pass
 
     return
+
+def checkProxy():
+
+    pass
+
+
 
 
 
@@ -26,4 +33,6 @@ if __name__ == '__main__':
     }
     r = requests.get('https://www.baidu.com/',headers=headers)
     r.enconding = "utf-8"
-    print(r.text)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    print(soup.title)
