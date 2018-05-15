@@ -14,3 +14,5 @@ class TIpProxy(models.Model):
     class Meta:
         managed = False
         db_table = 't_ip_proxy'
+
+
