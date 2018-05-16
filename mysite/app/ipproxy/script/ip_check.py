@@ -78,8 +78,8 @@ def user_proxy(proxy_addr, url):
     return data
 
 
-
-print(getCurrIp())
-print(getCurrIp())
-print(getCurrIp())
+if __name__ == '__main__':
+    print(getCurrIp())
+    print(getCurrIp())
+    print(getCurrIp())
 # sched.start()

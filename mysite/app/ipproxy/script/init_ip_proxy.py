@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
+from mysite.app.ipproxy import ipcommon
 
 sched = BlockingScheduler()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
@@ -54,7 +55,8 @@ def xici_query():
                 if idx == 4:
                     ipm.protocol = l
                 idx = idx + 1
-            ipm.save()
+            if ipcommon.checkIpCon(ipm.ip, ipm.prot):
+                ipm.save()
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
     pass
 
@@ -98,9 +100,11 @@ def kuaidaili_query():
                 if idx == 3:
                     ipm.protocol = l
                 idx = idx + 1
-            ipm.save()
+            if ipcommon.checkIpCon(ipm.ip, ipm.prot):
+                ipm.save()
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
     pass
+
 
 # 抓取data5u代理数据，1分钟一次
 # http://www.data5u.com/free/gngn/index.shtml
@@ -109,16 +113,17 @@ def data5u_query():
     data5u_query_url("http://www.data5u.com/free/gngn/index.shtml")
     data5u_query_url("http://www.data5u.com/free/gwgn/index.shtml")
 
+
 def data5u_query_url(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
     }
-    #url = "http://www.data5u.com/free/gngn/index.shtml"
-    print(time.strftime("%d %H:%M:%S",time.localtime(time.time())),"抓取代理网站（",url,")开始-----")
+    # url = "http://www.data5u.com/free/gngn/index.shtml"
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站（", url, ")开始-----")
     r = requests.get(url, headers=headers)
     r.enconding = "utf-8"
     soup = BeautifulSoup(r.text, "lxml")
-    trs = soup.find_all("ul",attrs={'class':['l2']})
+    trs = soup.find_all("ul", attrs={'class': ['l2']})
     for tr in trs[1:]:
         txt = tr.text
         if txt.find("http") < 0:
@@ -145,12 +150,12 @@ def data5u_query_url(url):
             if idx == 3:
                 ipm.protocol = l
             idx = idx + 1
-        #print(ipm)
-        ipm.save()
+        # print(ipm)
+        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
+            ipm.save()
+
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站（", url, ")结束-----")
     pass
-
-
 
 
 # 抓取熊猫代理数据，5分钟一次
@@ -177,7 +182,8 @@ def xiongmaodaili_query():
         ipm.protocol = "HTTPS"
         ipm.proxy_type = 2
         ipm.loc = lj['addr']
-        ipm.save()
+        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
+            ipm.save()
     pass
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
@@ -198,7 +204,7 @@ def ip66_query():
         l = l.strip()
         if len(l) < 1:
             continue
-        if l.find(":")<0:
+        if l.find(":") < 0:
             continue
         end = l.find("<br")
         if end < 0:
@@ -210,9 +216,10 @@ def ip66_query():
         ipm = models.TIpProxy(update_time=ud)
         ipm.ip = ipp[0]
         ipm.prot = int(ipp[1])
-        ipm.protocol="https"
-        ipm.proxy_type=2
-        ipm.save()
+        ipm.protocol = "https"
+        ipm.proxy_type = 2
+        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
+            ipm.save()
     # print(ipm)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
@@ -231,8 +238,6 @@ def getproxyType(s):
     return 0
 
 
-
-
-#ip66_query()
+# ip66_query()
 
 sched.start()
