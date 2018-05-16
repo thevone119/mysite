@@ -23,7 +23,7 @@ def xici_query():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
     }
-    for i in range(1, 50):
+    for i in range(1, 20):
         url = "http://www.xicidaili.com/nn/" + str(i)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
         r = requests.get(url, headers=headers)
@@ -67,7 +67,7 @@ def kuaidaili_query():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
     }
 
-    for i in range(1, 50):
+    for i in range(1, 30):
         url = "https://www.kuaidaili.com/free/inha/" + str(i)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
         r = requests.get(url, headers=headers)
@@ -181,6 +181,42 @@ def xiongmaodaili_query():
     pass
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
+
+# 抓取66ip代理数据，5分钟一次
+# http://www.66ip.cn/
+@sched.scheduled_job('interval', seconds=30)
+def ip66_query():
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
+    }
+    url = "http://www.66ip.cn/nmtq.php?getnum=100&isp=0&anonymoustype=0&start=&ports=&export=&ipaddress=&area=0&proxytype=1&api=66ip"
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
+    r = requests.get(url, headers=headers)
+    r.enconding = "utf-8"
+    tline = r.text.split("\n")
+    for l in tline:
+        l = l.strip()
+        if len(l) < 1:
+            continue
+        if l.find(":")<0:
+            continue
+        end = l.find("<br")
+        if end < 0:
+            continue
+
+        l = l[0:end]
+        ipp = l.split(":")
+        ud = str(int(time.time() * 1000))
+        ipm = models.TIpProxy(update_time=ud)
+        ipm.ip = ipp[0]
+        ipm.prot = int(ipp[1])
+        ipm.protocol="https"
+        ipm.proxy_type=2
+        ipm.save()
+    # print(ipm)
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
+
+
 def getproxyType(s):
     if len(s) < 1:
         return 0
@@ -197,6 +233,6 @@ def getproxyType(s):
 
 
 
-data5u_query()
+#ip66_query()
 
-# sched.start()
+sched.start()
