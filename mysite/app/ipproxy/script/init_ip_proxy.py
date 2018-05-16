@@ -2,7 +2,6 @@
 # 把所有代理IP信息进行抓取，然后存储到数据库中，每5分钟进行一次抓取
 import os
 import json
-import datetime
 import django
 import requests
 from bs4 import BeautifulSoup
@@ -190,7 +189,7 @@ def xiongmaodaili_query():
 
 # 抓取66ip代理数据，5分钟一次
 # http://www.66ip.cn/
-@sched.scheduled_job('interval', seconds=30)
+@sched.scheduled_job('interval', seconds=60)
 def ip66_query():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'

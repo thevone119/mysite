@@ -3,9 +3,14 @@
 import os
 import socket
 import requests
-import urllib
+import django
 import time
-from bs4 import BeautifulSoup
+from mysite.libs import myredis
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
+django.setup()  # 执行
+# 这个导入不能写在头部,要先执行django进行一些环境初始化工作,否则无法初始化
+from mysite.app.ipproxy import models
 
 # 当前的外网ip的全局变量(每10分钟重新检测一次)
 currip = ""
@@ -47,39 +52,52 @@ def getCurrIp():
 
 
 # 校验代理是否可以用
-def checkIpProxy(ip, prot):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
-    }
-    url = "https://blog.csdn.net/?s=123132123"
-    proxy_dict = {
-        "http": "http://" + ip + ":" + str(prot)
-    }
+def checkIpProxy(prol,ip, prot):
+    try:
+        cip = getCurrIp()
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
+        }
+        proxies = {
+            prol: "http://" + ip + ":" + str(prot)
+        }
+        url = "http://2017.ip138.com/ic.asp"
+        r = requests.get(url, headers=headers, proxies=proxies)
+        ip = r.text[r.text.find("[") + 1:r.text.find("]")]
+        print(ip)
+        if len(ip)<3:
+            return False
+        if ip != cip:
+            return True
+    except Exception:
+        pass
+    return False
 
-    proxy_info = {'host': ip,
-                  'port': prot
-                  }
-    proxy_support = urllib.request.ProxyHandler({"http": "http://%(host)s:%(port)d" % proxy_info})
-    # proxy_support = urllib.ProxyHandler({"http": "http://%(host)s:%(port)d" % proxy_info})
-    opener = urllib.request.build_opener(proxy_support)
-    urllib.request.install_opener(opener)
-    request = urllib.request.Request(url, headers=headers)
-    htmlpage = urllib.request.urlopen(request).read(200000)
-    soup = BeautifulSoup(htmlpage, "lxml")
-    return soup.title
+#加载有效的ip，匿名的ip到缓存中
+def loadActiveIp():
+    #只查询最近5分钟的
+    mintime = int(time.time()*1000)-1000*60*10
+
+    iplist = models.TIpProxy.objects.filter(update_time__gt=mintime).order_by("-update_time").all()
+    print(len(iplist))
+    for ipm in iplist:
+        if checkIpCon(ipm.ip,ipm.prot):
+            pass
+        else:
+            continue
+        if checkIpProxy(ipm.protocol,ipm.ip,ipm.prot):
+            print(ipm)
 
 
-def user_proxy(proxy_addr, url):
-    import urllib.request
-    proxy = urllib.request.ProxyHandler({'http': proxy_addr})
-    opener = urllib.request.build_opener(proxy, urllib.request.HTTPHandler)
-    urllib.request.install_opener(opener)
-    data = urllib.request.urlopen(url).read().decode('utf-8')
-    return data
+
+    pass
+
+
 
 
 if __name__ == '__main__':
-    print(getCurrIp())
-    print(getCurrIp())
-    print(getCurrIp())
+    #死循环，一直检测ip是否可用
+    while True:
+        loadActiveIp()
+        time.sleep(3)
 # sched.start()
