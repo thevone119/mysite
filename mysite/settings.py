@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mysite.app.taobao',
+    'mysite.app.ipproxy',
 ]
 
 MIDDLEWARE = [
