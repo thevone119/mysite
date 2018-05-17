@@ -23,7 +23,7 @@ def xici_query():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
     }
-    for i in range(1, 20):
+    for i in range(1, 10):
         url = "http://www.xicidaili.com/nn/" + str(i)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
         r = requests.get(url, headers=headers)
@@ -37,6 +37,7 @@ def xici_query():
             tline = txt.split("\n")
             ud = str(int(time.time() * 1000))
             ipm = models.TIpProxy(update_time=ud)
+            ipm.src_url = url
             idx = 0
             for l in tline:
                 l = l.strip()
@@ -68,7 +69,7 @@ def kuaidaili_query():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
     }
 
-    for i in range(1, 30):
+    for i in range(1, 10):
         url = "https://www.kuaidaili.com/free/inha/" + str(i)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
         r = requests.get(url, headers=headers)
@@ -82,6 +83,7 @@ def kuaidaili_query():
             tline = txt.split("\n")
             ud = str(int(time.time() * 1000))
             ipm = models.TIpProxy(update_time=ud)
+            ipm.src_url = url
             idx = 0
             for l in tline:
                 l = l.strip()
@@ -130,6 +132,7 @@ def data5u_query_url(url):
         tline = txt.split("\n")
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
+        ipm.src_url = url
         idx = 0
 
         for l in tline:
@@ -176,6 +179,7 @@ def xiongmaodaili_query():
     for lj in list:
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
+        ipm.src_url = url
         ipm.ip = lj['ip']
         ipm.prot = lj['port']
         ipm.protocol = "HTTPS"
@@ -196,7 +200,7 @@ def ip66_query():
     }
     url = "http://www.66ip.cn/nmtq.php?getnum=100&isp=0&anonymoustype=0&start=&ports=&export=&ipaddress=&area=0&proxytype=1&api=66ip"
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
-    r = requests.get(url, headers=headers)
+    r = requests.get(url, headers=headers,timeout=5)
     r.enconding = "utf-8"
     tline = r.text.split("\n")
     for l in tline:
@@ -213,6 +217,7 @@ def ip66_query():
         ipp = l.split(":")
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
+        ipm.src_url = url
         ipm.ip = ipp[0]
         ipm.prot = int(ipp[1])
         ipm.protocol = "https"

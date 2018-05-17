@@ -5,6 +5,11 @@ import socket
 import requests
 import django
 import time
+import threading
+import urllib.request
+from mysite.libs import stringExt
+from mysite.libs import MyThreadPool
+
 from mysite.libs import myredis
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
@@ -16,6 +21,8 @@ from mysite.app.ipproxy import models
 currip = ""
 # 最后检测时间，全局变量
 last_updata_ip = 0.1
+# 引入锁
+L = threading.Lock()
 
 
 # 校验IP，端口是否可用
@@ -31,40 +38,76 @@ def checkIpCon(ip, prot):
     sk.close()
     return False
 
+def httpRequest(url, proxy = None,type='http',chart='utf-8'):
+    try:
+        ret = None
+        SockFile = None
+        request = urllib.request.Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3')
+        request.add_header('Pragma', 'no-cache')
+        print(proxy)
+        if proxy:
+            request.set_proxy(proxy, type)
+        opener = urllib.request.build_opener()
+        SockFile = opener.open(request)
+        ret = SockFile.read().decode(chart)
+    finally:
+        if SockFile:
+            SockFile.close()
+
+    return ret
 
 # 获取当前的ip(外网的ip)
 def getCurrIp():
+    L.acquire()
     global currip
     global last_updata_ip
-    if len(currip) > 2 and (time.time() - last_updata_ip) < 60 * 10:
-        return currip
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
-    }
-    print("getCurrIp--")
-    url = "http://2017.ip138.com/ic.asp"
-    r = requests.get(url, headers=headers)
-    ip = r.text[r.text.find("[") + 1:r.text.find("]")]
-    if len(ip) > 5:
-        currip = ip
-        last_updata_ip = time.time()
+    try:
+        if len(currip) > 2 and (time.time() - last_updata_ip) < 60 * 10:
+            return currip
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3'
+        }
+        print("getCurrIp--")
+        #忽略警告
+        requests.packages.urllib3.disable_warnings()
+        url = "https://ip.cn/"
+        r = requests.get(url, headers=headers)
+        r.encoding = 'utf-8'
+        ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
+        if len(ip) > 5:
+            currip = ip
+            last_updata_ip = time.time()
+        pass
+    except Exception:
+        pass
+    finally:
+        L.release()
     return currip
 
 
 # 校验代理是否可以用
-def checkIpProxy(prol,ip, prot):
+def checkIpProxy(ip, prot):
     try:
         cip = getCurrIp()
+
+        url = "https://ip.cn/"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3'
         }
+        proxy = 'http://{}:{}'.format(ip, prot)
         proxies = {
-            prol: "http://" + ip + ":" + str(prot)
+            "http": proxy,
+            "https": proxy,
         }
-        url = "http://2017.ip138.com/ic.asp"
-        r = requests.get(url, headers=headers, proxies=proxies)
-        ip = r.text[r.text.find("[") + 1:r.text.find("]")]
-        print(ip)
+        # 忽略警告
+        requests.packages.urllib3.disable_warnings()
+        url = "https://ip.cn/"
+        r = requests.get(url, proxies=proxies,  headers=headers, allow_redirects=False, verify=False)
+        r.encoding = 'utf-8'
+        ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
+
+        print("getip:"+ip+",proxyip:"+ip)
         if len(ip)<3:
             return False
         if ip != cip:
@@ -75,18 +118,16 @@ def checkIpProxy(prol,ip, prot):
 
 #加载有效的ip，匿名的ip到缓存中
 def loadActiveIp():
-    #只查询最近5分钟的
-    mintime = int(time.time()*1000)-1000*60*10
 
-    iplist = models.TIpProxy.objects.filter(update_time__gt=mintime).order_by("-update_time").all()
+    #只查询最近5分钟的
+    mintime = int(time.time()*1000)-1000*60*300
+    pool = MyThreadPool.MyThreadPool(10)
+
+    iplist = models.TIpProxy.objects.filter(update_time__gt=mintime).order_by("-update_time").all()[:500]
     print(len(iplist))
     for ipm in iplist:
-        if checkIpCon(ipm.ip,ipm.prot):
-            pass
-        else:
-            continue
-        if checkIpProxy(ipm.protocol,ipm.ip,ipm.prot):
-            print(ipm)
+        pool.callInThread(checkIpProxy,ipm.ip,ipm.prot)
+
 
 
 
