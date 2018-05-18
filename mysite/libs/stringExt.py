@@ -7,7 +7,7 @@ def ExtStr(src,star,end):
     idxs = src.find(star)
     idxe = src.find(end)
     if idxs==-1:
-        idxs = 0
+        return None
     else:
         idxs=idxs+len(star)
     if idxe==-1:
