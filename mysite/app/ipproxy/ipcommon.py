@@ -21,12 +21,12 @@ def checkIpCon(ipm=None):
     if(len(h)!=2):
         return False
     ip = h[0]
-    prot = int(h[1])
+    port = int(h[1])
     try:
-        sk.connect((ip, prot))
+        sk.connect((ip, port))
         return True
     except Exception as e:
-        print(e)
+        #print(e,ip,port)
         pass
     finally:
         sk.close()
@@ -79,7 +79,6 @@ def checkIpProxy(ipm=None):
         r = requests.get(url, proxies=proxies, headers=headers, allow_redirects=False, verify=False)
         r.encoding = 'utf-8'
         ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
-        print("getip:"+ip)
         if len(ip) < 3 or len(ip)>20:
             return False
         if ip != cip:
@@ -89,7 +88,12 @@ def checkIpProxy(ipm=None):
     return False
 
 if __name__ == '__main__':
+    def testff():
+        ipm = models.TIpProxy()
+        ipm.host = "127.0.0.1:3333"
+        print(checkIpCon(ipm))
 
-    ipm=models.TIpProxy()
-    ipm.host = "127.0.0.1:3333"
-    print(checkIpCon(ipm))
+    from mysite.libs import MyThreadPool
+    tpool = MyThreadPool.MyThreadPool(8)
+    for i in range(20):
+        tpool.callInThread(testff)

@@ -16,17 +16,14 @@ from mysite.app.ipproxy import models
 def checkIp():
     ipm = ippool.popNoCheckIp()
     ret = ipcommon.checkIpCon(ipm)
-    if ~ret:
-        return
-    print("startip:" + ipm.host)
-    ret = ipcommon.checkIpProxy(ipm)
-    if ~ret:
-        return
-    print("checkIp:" + ipm.host)
-    ipm.check_time = int(time.time())
-    ipm.save()
-    ippool.pushCheckIp(ipm)
-    return
+    if ret:
+        ret = ipcommon.checkIpProxy(ipm)
+        if ret:
+            print("checkIp:" + ipm.host)
+            ipm.check_time = int(time.time())
+            ipm.save()
+            ippool.pushCheckIp(ipm)
+
 
 
 
