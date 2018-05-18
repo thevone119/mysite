@@ -38,12 +38,14 @@ def checkIpCon(ip, prot):
     sk.close()
     return False
 
-def httpRequest(url, proxy = None,type='http',chart='utf-8'):
+
+def httpRequest(url, proxy=None, type='http', chart='utf-8'):
     try:
         ret = None
         SockFile = None
         request = urllib.request.Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3')
+        request.add_header('User-Agent',
+                           'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3')
         request.add_header('Pragma', 'no-cache')
         print(proxy)
         if proxy:
@@ -57,6 +59,7 @@ def httpRequest(url, proxy = None,type='http',chart='utf-8'):
 
     return ret
 
+
 # 获取当前的ip(外网的ip)
 def getCurrIp():
     L.acquire()
@@ -69,13 +72,13 @@ def getCurrIp():
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3'
         }
         print("getCurrIp--")
-        #忽略警告
+        # 忽略警告
         requests.packages.urllib3.disable_warnings()
         url = "https://ip.cn/"
         r = requests.get(url, headers=headers)
         r.encoding = 'utf-8'
         ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
-        if len(ip) > 5:
+        if len(ip) > 5 and len(ip) < 20:
             currip = ip
             last_updata_ip = time.time()
         pass
@@ -87,7 +90,7 @@ def getCurrIp():
 
 
 # 校验代理是否可以用
-def checkIpProxy(ip, prot):
+def checkIpProxy(ipm=None):
     try:
         cip = getCurrIp()
 
@@ -95,7 +98,7 @@ def checkIpProxy(ip, prot):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3'
         }
-        proxy = 'http://{}:{}'.format(ip, prot)
+        proxy = 'http://' + ipm.host
         proxies = {
             "http": proxy,
             "https": proxy,
@@ -103,41 +106,40 @@ def checkIpProxy(ip, prot):
         # 忽略警告
         requests.packages.urllib3.disable_warnings()
         url = "https://ip.cn/"
-        r = requests.get(url, proxies=proxies,  headers=headers, allow_redirects=False, verify=False)
+        r = requests.get(url, proxies=proxies, headers=headers, allow_redirects=False, verify=False)
         r.encoding = 'utf-8'
         ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
-
-        print("getip:"+ip+",proxyip:"+ip)
-        if len(ip)<3:
+        print("getip:"+ip)
+        if len(ip) < 3 or len(ip)>20:
             return False
         if ip != cip:
+            print("update")
+            ipm.check_time = int(time.time())
+            ipm.save()
+            #ipm.update(check_time=int(time.time()))
             return True
     except Exception:
         pass
     return False
 
-#加载有效的ip，匿名的ip到缓存中
+
+# 加载有效的ip，匿名的ip到缓存中
 def loadActiveIp():
+    # 只查询最近5分钟的
+    mintime = int(time.time() * 1000) - 1000 * 60 * 300
+    pool = MyThreadPool.MyThreadPool(8)
 
-    #只查询最近5分钟的
-    mintime = int(time.time()*1000)-1000*60*300
-    pool = MyThreadPool.MyThreadPool(10)
-
-    iplist = models.TIpProxy.objects.filter(update_time__gt=mintime).order_by("-update_time").all()[:500]
+    #iplist = models.TIpProxy.objects.filter(update_time__gt=mintime).order_by("-update_time").all()[:500]
+    iplist = models.TIpProxy.objects.order_by("-update_time").all()[:500]
     print(len(iplist))
     for ipm in iplist:
-        pool.callInThread(checkIpProxy,ipm.ip,ipm.prot)
-
-
-
+        pool.callInThread(checkIpProxy, ipm)
 
     pass
 
 
-
-
 if __name__ == '__main__':
-    #死循环，一直检测ip是否可用
+    # 死循环，一直检测ip是否可用
     while True:
         loadActiveIp()
         time.sleep(3)

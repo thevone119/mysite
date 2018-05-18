@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 # 把所有代理IP信息进行抓取，然后存储到数据库中，每5分钟进行一次抓取
+# 1.所有代理ip抓取成功后，把ip放入redis缓存池中
+# 2.定时从缓存池中取出ip，验证是否可用代理，如果是可用代理，则放入可用代理池中
+# 3.
 import os
 import json
 import django
@@ -7,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
-from mysite.app.ipproxy import ipcommon
+from mysite.app.ipproxy import ippool
 
 sched = BlockingScheduler()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
@@ -39,14 +42,16 @@ def xici_query():
             ipm = models.TIpProxy(update_time=ud)
             ipm.src_url = url
             idx = 0
+            qip = ""
+            qprot = ""
             for l in tline:
                 l = l.strip()
                 if len(l) < 1:
                     continue
                 if idx == 0:
-                    ipm.ip = l
+                    qip = l
                 if idx == 1:
-                    ipm.prot = int(l)
+                    qprot = l
                     pass
                 if idx == 2:
                     ipm.loc = l
@@ -55,8 +60,8 @@ def xici_query():
                 if idx == 4:
                     ipm.protocol = l
                 idx = idx + 1
-            if ipcommon.checkIpCon(ipm.ip, ipm.prot):
-                ipm.save()
+            ipm.host = qip + ":" + qprot
+            ippool.pushNoCheckIp(ipm)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
     pass
 
@@ -85,14 +90,16 @@ def kuaidaili_query():
             ipm = models.TIpProxy(update_time=ud)
             ipm.src_url = url
             idx = 0
+            qip = ""
+            qprot = ""
             for l in tline:
                 l = l.strip()
                 if len(l) < 1:
                     continue
                 if idx == 0:
-                    ipm.ip = l
+                    qip = l
                 if idx == 1:
-                    ipm.prot = int(l)
+                    qprot = l
                     pass
                 if idx == 4:
                     ipm.loc = l
@@ -101,8 +108,8 @@ def kuaidaili_query():
                 if idx == 3:
                     ipm.protocol = l
                 idx = idx + 1
-            if ipcommon.checkIpCon(ipm.ip, ipm.prot):
-                ipm.save()
+            ipm.host = qip + ":" + qprot
+            ippool.pushNoCheckIp(ipm)
         print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
     pass
 
@@ -134,16 +141,17 @@ def data5u_query_url(url):
         ipm = models.TIpProxy(update_time=ud)
         ipm.src_url = url
         idx = 0
-
+        qip = ""
+        qprot = ""
         for l in tline:
             l = l.strip()
 
             if len(l) < 1:
                 continue
             if idx == 0:
-                ipm.ip = l
+                qip = l
             if idx == 1:
-                ipm.prot = int(l)
+                qprot = l
                 pass
             if idx == 4:
                 ipm.loc = l
@@ -152,9 +160,8 @@ def data5u_query_url(url):
             if idx == 3:
                 ipm.protocol = l
             idx = idx + 1
-        # print(ipm)
-        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
-            ipm.save()
+        ipm.host = qip + ":" + qprot
+        ippool.pushNoCheckIp(ipm)
 
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站（", url, ")结束-----")
     pass
@@ -180,13 +187,11 @@ def xiongmaodaili_query():
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
         ipm.src_url = url
-        ipm.ip = lj['ip']
-        ipm.prot = lj['port']
+        ipm.host = lj['ip']+str(lj['port'])
         ipm.protocol = "HTTPS"
         ipm.proxy_type = 2
         ipm.loc = lj['addr']
-        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
-            ipm.save()
+        ippool.pushNoCheckIp(ipm)
     pass
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
@@ -200,7 +205,7 @@ def ip66_query():
     }
     url = "http://www.66ip.cn/nmtq.php?getnum=100&isp=0&anonymoustype=0&start=&ports=&export=&ipaddress=&area=0&proxytype=1&api=66ip"
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")开始-----")
-    r = requests.get(url, headers=headers,timeout=5)
+    r = requests.get(url, headers=headers, timeout=5)
     r.enconding = "utf-8"
     tline = r.text.split("\n")
     for l in tline:
@@ -212,20 +217,23 @@ def ip66_query():
         end = l.find("<br")
         if end < 0:
             continue
-
         l = l[0:end]
-        ipp = l.split(":")
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
         ipm.src_url = url
-        ipm.ip = ipp[0]
-        ipm.prot = int(ipp[1])
+        ipm.host = l
         ipm.protocol = "https"
         ipm.proxy_type = 2
-        if ipcommon.checkIpCon(ipm.ip, ipm.prot):
-            ipm.save()
+        ippool.pushNoCheckIp(ipm)
     # print(ipm)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
+
+#每分钟从数据库中查询最后可用的200条放入待检测列表
+@sched.scheduled_job('interval', seconds=100)
+def mydb_query():
+    iplist = models.TIpProxy.objects.order_by("-check_time,-update_time").all()[:200]
+    for ipm in iplist:
+        ippool.pushNoCheckIp(ipm)
 
 
 def getproxyType(s):
