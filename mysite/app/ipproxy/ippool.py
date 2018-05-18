@@ -40,7 +40,7 @@ def pushNoCheckIp(ipm=None):
 def popNoCheckIp():
     r = myredis.getRedis()
     ipm = r.lpop(IPPROXY_POOL_NO_CHECK)
-    while ipm == None:
+    while ipm is None:
         time.sleep(0.1)
         ipm = r.lpop(IPPROXY_POOL_NO_CHECK)
     ipm = pickle.loads(ipm)
@@ -65,7 +65,7 @@ def pushCheckIp(ipm=None):
 def popCheckIp():
     r = myredis.getRedis()
     ipm = r.lpop(IPPROXY_POOL_CHECK)
-    while ipm == None:
+    while ipm is None:
         time.sleep(0.1)
         ipm = r.lpop(IPPROXY_POOL_CHECK)
     ipm = pickle.loads(ipm)

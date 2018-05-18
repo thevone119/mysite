@@ -11,7 +11,8 @@ import time
 from apscheduler.schedulers.blocking import BlockingScheduler
 from mysite.app.ipproxy import ippool
 from mysite.app.ipproxy import models
-
+from mysite.app.ipproxy import ipcommon
+from mysite.libs import MyThreadPool
 
 
 
@@ -249,6 +250,29 @@ def getproxyType(s):
     return 0
 
 
-#ip66_query()
+#检查IP是否有效的方法，如果有效，则存储到数据库中，并且放入有效ip池中
+def checkIp():
+    ipm = ippool.popNoCheckIp()
+    ret = ipcommon.checkIpCon(ipm)
+    if ret:
+        ret = ipcommon.checkIpProxy(ipm)
+        if ret:
+            print("checkIp:" + ipm.host)
+            ipm.check_time = int(time.time())
+            ipm.save()
+            ippool.pushCheckIp(ipm)
 
-sched.start()
+#每分钟检测相关的ip是否有效，如果有效，则放入到可用ip池中
+@sched.scheduled_job('interval', seconds=100)
+def checkIp_job():
+    tpool = MyThreadPool.MyThreadPool(10)
+    #死循环一直进行检查
+    while True:
+        tpool.callInThread(checkIp)
+
+#ip66_query()
+if __name__ == '__main__':
+    print("sched.start()")
+    sched.start()
+
+

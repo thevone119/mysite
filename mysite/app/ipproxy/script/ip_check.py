@@ -39,6 +39,5 @@ def loadActiveIp():
 
 if __name__ == '__main__':
     # 死循环，一直检测ip是否可用
-    while True:
-        loadActiveIp()
-        time.sleep(3)
+    pass
+    #作废，合并到init_ip_proxy模块中
