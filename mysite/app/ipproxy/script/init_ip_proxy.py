@@ -263,7 +263,6 @@ def checkIp():
             ippool.pushCheckIp(ipm)
 
 #每分钟检测相关的ip是否有效，如果有效，则放入到可用ip池中
-@sched.scheduled_job('interval', seconds=100)
 def checkIp_job():
     tpool = MyThreadPool.MyThreadPool(10)
     #死循环一直进行检查

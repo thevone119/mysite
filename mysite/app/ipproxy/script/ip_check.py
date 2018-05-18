@@ -15,6 +15,8 @@ from mysite.app.ipproxy import models
 
 def checkIp():
     ipm = ippool.popNoCheckIp()
+    if ipm is None:
+        return
     ret = ipcommon.checkIpCon(ipm)
     if ret:
         ret = ipcommon.checkIpProxy(ipm)
@@ -38,6 +40,9 @@ def loadActiveIp():
 
 
 if __name__ == '__main__':
+    while True:
+        loadActiveIp()
+        time.sleep(3)
     # 死循环，一直检测ip是否可用
     pass
     #作废，合并到init_ip_proxy模块中
