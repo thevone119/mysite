@@ -15,15 +15,20 @@ L = threading.Lock()
 # 校验IP，端口是否可用
 def checkIpCon(ipm=None):
     sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sk.settimeout(1)
+    sk.settimeout(2)
     h = ipm.host.split(":")
+    if(len(h)!=2):
+        return False
+    ip = h[0]
+    prot = int(h[1])
     try:
-        sk.connect((h[0], int(h[1])))
+        sk.connect((ip, prot))
         return True
-    except Exception:
-
+    except Exception as e:
+        print(e)
         pass
-    sk.close()
+    finally:
+        sk.close()
     return False
 
 # 获取当前的ip(外网的ip)

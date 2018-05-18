@@ -4,20 +4,22 @@
 # 2.定时从缓存池中取出ip，验证是否可用代理，如果是可用代理，则放入可用代理池中
 # 3.
 import os
-import json
 import django
+import json
 import requests
 from bs4 import BeautifulSoup
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
 from mysite.app.ipproxy import ippool
 
-sched = BlockingScheduler()
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
 django.setup()  # 执行
 # 这个导入不能写在头部,要先执行django进行一些环境初始化工作,否则无法初始化
 from mysite.app.ipproxy import models
 
+
+sched = BlockingScheduler()
 
 # 抓取西刺代理的数据每5分钟执行一次
 # http://www.xicidaili.com/nn/27
@@ -187,7 +189,7 @@ def xiongmaodaili_query():
         ud = str(int(time.time() * 1000))
         ipm = models.TIpProxy(update_time=ud)
         ipm.src_url = url
-        ipm.host = lj['ip']+str(lj['port'])
+        ipm.host = lj['ip']+":"+str(lj['port'])
         ipm.protocol = "HTTPS"
         ipm.proxy_type = 2
         ipm.loc = lj['addr']
@@ -229,12 +231,13 @@ def ip66_query():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
 #每分钟从数据库中查询最后可用的200条放入待检测列表
-@sched.scheduled_job('interval', seconds=100)
+@sched.scheduled_job('interval', seconds=20)
 def mydb_query():
-    iplist = models.TIpProxy.objects.order_by("-check_time,-update_time").all()[:200]
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip开始-----")
+    iplist = models.TIpProxy.objects.order_by("-check_time").order_by("-update_time").all()[:200]
     for ipm in iplist:
         ippool.pushNoCheckIp(ipm)
-
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip结束-----",len(iplist))
 
 def getproxyType(s):
     if len(s) < 1:
