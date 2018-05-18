@@ -4,6 +4,7 @@ import threading
 import requests
 import time
 from mysite.libs import stringExt
+from mysite.app.ipproxy import models
 
 # 当前的外网ip的全局变量(每10分钟重新检测一次)
 currip = ""
@@ -86,3 +87,9 @@ def checkIpProxy(ipm=None):
     except Exception:
         pass
     return False
+
+if __name__ == '__main__':
+
+    ipm=models.TIpProxy()
+    ipm.host = "127.0.0.1:3333"
+    print(checkIpCon(ipm))

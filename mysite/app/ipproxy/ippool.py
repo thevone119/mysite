@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-import django
+
 from mysite.libs import myredis
 import pickle
 import time
@@ -12,10 +11,7 @@ IPPROXY_POOL_NO_CHECK = "IPPROXY_POOL:NO_CHECK" #未检测的池
 IPPROXY_POOL_CHECK = "IPPROXY_POOL:CHECK" #已检测的池，可用的IP池
 IPPROXY_POOL_KEY = "IPPROXY_POOL:KEY" #判断ip是否存在的KEY
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
-django.setup()  # 执行
-# 这个导入不能写在头部,要先执行django进行一些环境初始化工作,否则无法初始化
-from mysite.app.ipproxy import models
+
 
 # 放入池中,放入队列的末尾
 def pushNoCheckIp(ipm=None):
@@ -25,7 +21,7 @@ def pushNoCheckIp(ipm=None):
         return
     r.hset(IPPROXY_POOL_KEY, ipm.host, None)
     #从右边放入队列
-    print("push:"+ipm.host)
+    print("push:"+ipm.host+","+ipm.src_url)
     r.rpush(IPPROXY_POOL_NO_CHECK, pickle.dumps(ipm))
 
 

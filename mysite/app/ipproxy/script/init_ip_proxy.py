@@ -3,20 +3,16 @@
 # 1.所有代理ip抓取成功后，把ip放入redis缓存池中
 # 2.定时从缓存池中取出ip，验证是否可用代理，如果是可用代理，则放入可用代理池中
 # 3.
-import os
-import django
+
 import json
 import requests
 from bs4 import BeautifulSoup
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
 from mysite.app.ipproxy import ippool
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
-django.setup()  # 执行
-# 这个导入不能写在头部,要先执行django进行一些环境初始化工作,否则无法初始化
 from mysite.app.ipproxy import models
+
+
 
 
 sched = BlockingScheduler()
@@ -253,6 +249,6 @@ def getproxyType(s):
     return 0
 
 
-# ip66_query()
+#ip66_query()
 
 sched.start()

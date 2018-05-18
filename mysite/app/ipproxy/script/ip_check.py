@@ -7,12 +7,9 @@ import time
 from mysite.app.ipproxy import ipcommon
 from mysite.app.ipproxy import ippool
 from mysite.libs import MyThreadPool
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")  # 在Django 里想单独执行文件写上这句话
-django.setup()  # 执行
-# 这个导入不能写在头部,要先执行django进行一些环境初始化工作,否则无法初始化
 from mysite.app.ipproxy import models
+
+
 
 
 
@@ -28,7 +25,6 @@ def checkIp():
     print("checkIp:" + ipm.host)
     ipm.check_time = int(time.time())
     ipm.save()
-
     ippool.pushCheckIp(ipm)
     return
 

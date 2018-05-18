@@ -53,7 +53,8 @@ class MyThreadPool:
                 # context.call(ctx, log.err)
                 pass
 
-        del onResult, result
+        del onResult
+
 
     def wait(self):
         while True:
@@ -66,14 +67,15 @@ class MyThreadPool:
 
 
 if __name__ == '__main__':
-    def testfunc1(i=0):
+    def testfunc1():
         time.sleep(2)
-        print(i)
+        print("test")
+        return False
 
     pool = MyThreadPool(10)
 
     for i in range(1,10000):
-        pool.callInThread(testfunc1,i)
+        pool.callInThread(testfunc1)
         print("call:",i)
 
     pool.wait()
