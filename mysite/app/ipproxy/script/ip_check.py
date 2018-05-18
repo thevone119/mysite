@@ -29,8 +29,8 @@ def checkIp():
 
 # 加载有效的ip，匿名的ip到缓存中
 def loadActiveIp():
-    #开启10个线程对ip进行校验处理,每次校验1000个
-    tpool = MyThreadPool.MyThreadPool(8)
+    #开启5个线程对ip进行校验处理,每次校验1000个
+    tpool = MyThreadPool.MyThreadPool(5)
     for i in range(1000):
         tpool.callInThread(checkIp)
         #checkIp()

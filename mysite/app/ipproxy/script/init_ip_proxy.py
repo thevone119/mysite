@@ -227,10 +227,10 @@ def ip66_query():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "抓取代理网站(", url, ")结束-----")
 
 #每分钟从数据库中查询最后可用的200条放入待检测列表
-@sched.scheduled_job('interval', seconds=20)
+@sched.scheduled_job('interval', seconds=60)
 def mydb_query():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip开始-----")
-    iplist = models.TIpProxy.objects.order_by("-check_time").order_by("-update_time").all()[:200]
+    iplist = models.TIpProxy.objects.order_by("-check_time").all()[:200]
     for ipm in iplist:
         ippool.pushNoCheckIp(ipm)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip结束-----",len(iplist))
