@@ -50,12 +50,9 @@ def popNoCheckIp():
     return ipm
 
 
-# 放入池中,放入队列的末尾
+# 放入池中,放入队列的末尾,循环利用
 def pushCheckIp(ipm=None):
     r = myredis.getRedis()
-    # 先判断池中是否已存在，如果存在，在直接返回
-    if r.hexists(IPPROXY_POOL_KEY, ipm.host):
-        return
     r.hset(IPPROXY_POOL_KEY, ipm.host, None)
     # 从右边放入队列
     r.rpush(IPPROXY_POOL_CHECK, pickle.dumps(ipm))
