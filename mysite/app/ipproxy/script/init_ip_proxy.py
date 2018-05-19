@@ -253,6 +253,8 @@ def getproxyType(s):
 #检查IP是否有效的方法，如果有效，则存储到数据库中，并且放入有效ip池中
 def checkIp():
     ipm = ippool.popNoCheckIp()
+    if ipm is None:
+        return
     ret = ipcommon.checkIpCon(ipm)
     if ret:
         ret = ipcommon.checkIpProxy(ipm)
@@ -262,11 +264,14 @@ def checkIp():
             ipm.save()
             ippool.pushCheckIp(ipm)
 
+
 #每分钟检测相关的ip是否有效，如果有效，则放入到可用ip池中
+@sched.scheduled_job('interval', seconds=30)
 def checkIp_job():
+    print("checkIp_job:开始" )
     tpool = MyThreadPool.MyThreadPool(10)
     #死循环一直进行检查
-    while True:
+    for i in range(300):
         tpool.callInThread(checkIp)
 
 #ip66_query()
