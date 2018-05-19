@@ -36,13 +36,12 @@ def pushNoCheckIp(ipm=None):
     r.rpush(IPPROXY_POOL_NO_CHECK, pickle.dumps(ipm))
 
 
-# 池中取出，先进先出,如果池中没有，则阻塞
+# 池中取出，先进先出,如果池中没有，返回None
 def popNoCheckIp():
     r = myredis.getRedis()
     ipm = r.lpop(IPPROXY_POOL_NO_CHECK)
-    while ipm is None:
-        time.sleep(0.1)
-        ipm = r.lpop(IPPROXY_POOL_NO_CHECK)
+    if ipm is None:
+        return None
     ipm = pickle.loads(ipm)
     # 取出后，删除key
     r.hdel(IPPROXY_POOL_KEY, ipm.host)
@@ -58,13 +57,12 @@ def pushCheckIp(ipm=None):
     r.rpush(IPPROXY_POOL_CHECK, pickle.dumps(ipm))
 
 
-# 池中取出，先进先出,如果池中没有，则阻塞
+# 池中取出，先进先出,如果池中没有,返回None
 def popCheckIp():
     r = myredis.getRedis()
     ipm = r.lpop(IPPROXY_POOL_CHECK)
-    while ipm is None:
-        time.sleep(0.1)
-        ipm = r.lpop(IPPROXY_POOL_CHECK)
+    if ipm is None:
+        return None
     ipm = pickle.loads(ipm)
     # 取出后，删除key
     r.hdel(IPPROXY_POOL_KEY, ipm.host)
