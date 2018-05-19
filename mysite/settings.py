@@ -135,7 +135,7 @@ LOGGING = {
         },
         'django.db': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
         },
     },
 }
