@@ -8,6 +8,7 @@ import json
 import requests
 from bs4 import BeautifulSoup
 import time
+import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 from mysite.app.ipproxy import ippool
 from mysite.app.ipproxy import models
@@ -266,17 +267,24 @@ def checkIp():
 
 
 #每分钟检测相关的ip是否有效，如果有效，则放入到可用ip池中
-@sched.scheduled_job('interval', seconds=30)
+@sched.scheduled_job('interval',id="checkIp_job", seconds=30)
 def checkIp_job():
-    print("checkIp_job:开始" )
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"checkIp_job:开始" )
+    job = sched.get_job(job_id="checkIp_job")
+    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
     tpool = MyThreadPool.MyThreadPool(10)
     #死循环一直进行检查
-    for i in range(300):
+    for i in range(1000):
+        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        if next - now < 5:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"checkIp_job:结束")
+            return
         tpool.callInThread(checkIp)
 
 #ip66_query()
 if __name__ == '__main__':
     print("sched.start()")
+
     sched.start()
 
 
