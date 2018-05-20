@@ -35,6 +35,16 @@ def extractLine(src,*args):
     pass
     return None
 
+#对int进行处理
+def paseInt(v=None):
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except :
+        pass
+    return None
+
 
 if __name__ == '__main__':
     st = "123456\n" \
