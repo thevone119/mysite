@@ -26,6 +26,16 @@ class BaseHttpGet(object):
     def before(self):
         return True
 
+    # 对int进行处理
+    def paseInt(self,v=None):
+        if v is None:
+            return None
+        try:
+            return int(v)
+        except:
+            pass
+        return None
+
     # 执行数据爬取 get，如果成功，则调用parse方法
     # 如果这个返回True，则代表调用成功，移除出调用列表
     # 如果这个返回False,则代表调用失败，重新加入调用列表
@@ -82,25 +92,26 @@ class BaseHttpGet(object):
 
 # 把待爬取的http连接放入到池中
 def pushHttpGet(httpget=None):
-    r = myredis.getRedis()
     # 先判断池中是否已存在，如果存在，在直接返回
     if httpget.id is not None:
-        if r.hexists("HTTPGET:ID" , httpget.id):
+        if myredis.hexists("HTTPGET:ID" , httpget.id):
             return
-        r.hset("HTTPGET:ID",httpget.id,None)
+        else:
+            myredis.hset("HTTPGET:ID",httpget.id,None)
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
-    r.rpush("HTTPGET:POOL", pickle.dumps(httpget))
+    myredis.rpush("HTTPGET:POOL", pickle.dumps(httpget))
 
 def popHttpGet():
-    r = myredis.getRedis()
-    httpget = r.lpop("HTTPGET:POOL")
-    if httpget is None:
+    hg = myredis.lpop("HTTPGET:POOL")
+    if hg is None:
         return None
-    if httpget.id is not None:
-        r.hdelete("HTTPGET:ID",httpget.id)
-    return pickle.loads(httpget)
+
+    hg = pickle.loads(hg)
+    if hg.id is not None:
+        myredis.hdel("HTTPGET:ID",hg.id)
+    return hg
 
 # 测试类
 class TestHttpGet(BaseHttpGet):
