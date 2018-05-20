@@ -34,6 +34,7 @@ def init_shop_search():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 开始----")
     cityl = chinaCity.listAllCity()
     catl = tbcategory.listAllCat()
+    count=0
     for city in cityl:
         for cat in catl:
             tshop = tbHttp.TBShopSearchCrawer()
@@ -42,28 +43,33 @@ def init_shop_search():
             tshop.city=city
             tshop.id="shop_search"+city+","+cat
             BaseHttpGet.pushHttpGet(tshop)
+            count =count +1
     pass
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 结束----")
+
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 结束----",count)
 
 
 http_lasttime = None
-@sched.scheduled_job('interval', seconds=600)
+@sched.scheduled_job('interval',id="do_http_job", seconds=60)
 def do_http_job():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"do_http_job 开始----")
-    global http_lasttime
-    if http_lasttime is None:
-        http_lasttime = datetime.datetime.now()
+    job = sched.get_job(job_id="do_http_job")
+    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
+
     tpool = MyThreadPool.MyThreadPool(10)
-    while True:
-        s = (datetime.datetime.now() - http_lasttime).seconds
-        if s > 580:
-            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"do_http_job 结束----")
+    for i in range(2000):
+        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        if next - now < 5:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 结束----")
             return
-        http = BaseHttpGet.popHttpGet()
-        tpool.callInThread(do_http,http)
+        tpool.callInThread(do_http)
+    pass
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 提前结束----")
 
-
-def do_http(http=None):
+def do_http():
+    http = BaseHttpGet.popHttpGet()
+    if http is None:
+        return
     if http.run():
         pass
     else:
