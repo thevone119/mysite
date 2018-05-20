@@ -65,5 +65,6 @@ def popCheckIp():
 
 
 if __name__ == '__main__':
-    for i in range(1):
-        print(popNoCheckIp())
+    ipm = popNoCheckIp()
+    print(ipm)
+    pass
