@@ -277,9 +277,11 @@ def checkIp_job():
     for i in range(1000):
         now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         if next - now < 5:
-            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"checkIp_job:结束")
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"checkIp_job:时间到结束")
             return
         tpool.callInThread(checkIp)
+    pass
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "checkIp_job:提前结束")
 
 #ip66_query()
 if __name__ == '__main__':
