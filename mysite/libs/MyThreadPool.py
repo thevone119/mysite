@@ -16,6 +16,8 @@ class MyThreadPool:
         self.name = name
 
     def callInThread(self, func, *args, **kw):
+        while self.workingq.full():
+            time.sleep(0.1)
         o = (func, args, kw, None)
         self.q.put(o)
         self.workingq.put(1)
@@ -56,12 +58,7 @@ class MyThreadPool:
         del onResult
 
 
-    def wait(self):
-        while True:
-            if self.workingq.empty():
-                return
-            else:
-                time.sleep(0.1)
+
 
 
 
