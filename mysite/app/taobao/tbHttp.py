@@ -94,7 +94,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 else:
                     shop.save()
             pass
-            print("数据抓取结束", self.city, self.q, self.pageno, L_CAT, itemcount)
+            print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
             # 执行完，把一下页放入待执行列表
             if self.pageno < 100:
                 self.pageno = self.pageno + 1

@@ -57,7 +57,7 @@ def do_http_job():
     next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
 
     tpool = MyThreadPool.MyThreadPool(10)
-    for i in range(2000):
+    for i in range(10000):
         now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         if next - now < 5:
             print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 结束----")
@@ -77,7 +77,7 @@ def do_http():
         pass
 
 if __name__ == '__main__':
-    init_shop_search()
+    #init_shop_search()
     #do_http()
     sched.start()
     pass

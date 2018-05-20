@@ -42,7 +42,7 @@ def initCookie():
 
 
 if __name__ == '__main__':
-    for i in range(4000):
+    for i in range(10000):
         initCookie()
     pass
 
