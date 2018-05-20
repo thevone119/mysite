@@ -39,7 +39,8 @@ class MyThreadPool:
         try:
             result = function(*args, **kwargs)
             success = True
-        except:
+        except Exception as e:
+            print("线程执行错误",function,e)
             success = False
             if onResult is None:
                 pass

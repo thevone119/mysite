@@ -46,29 +46,32 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
             rettext = response.text
             # 成功的话，必然包含下面的字符串
             if rettext.find("g_page_config =") == -1:
+                print("数据抓取错误：" ,rettext)
                 return False
             g_pagestr = stringExt.extractLine(rettext, "g_page_config", "pageName")
+
             if g_pagestr is None:
+
                 return False
             g_pagestr = stringExt.ExtStr(g_pagestr, "g_page_config = ")
             g_pagestr = g_pagestr[:len(g_pagestr)-1]
             # 如果没有shopItems，则抓取结束了
             if g_pagestr.find("shopItems") == -1:
-                r.set("TB:ShopSearch:" + self.q + "," + self.city, None, ex=60 * 60 * 6)
+                myredis.set("TB:ShopSearch:" + self.q + "," + self.city, None, ex=60 * 60 * 6)
                 return True
             page = json.loads(g_pagestr)
             items = page["mods"]["shoplist"]["data"]["shopItems"]
             for item in items:
                 shop = models.TTbShop()
                 shopurl = item["shopUrl"]
-                shop.shopid = int(shopurl[shopurl.find("shop") + 4:shopurl.find(".taobao")])
+                shop.shopid = self.paseInt(shopurl[shopurl.find("shop") + 4:shopurl.find(".taobao")])
                 shop.mainpage = shopurl
-                shop.uid = int(item["uid"])
+                shop.uid = self.paseInt(item["uid"])
                 shop.nick = item["nick"]
                 shop.user_rate_url = item['userRateUrl']
                 shop.title = item['title']
-                shop.shop_score = int(item['totalsold'])
-                shop.prod_count = int(item['procnt'])
+                #shop.shop_score = self.paseInt(item['totalsold'])
+                shop.prod_count = self.paseInt(item['procnt'])
                 shop.shop_area = item['provcity']
                 if item["isTmall"] is True:
                     shop.shop_type = "TM"
@@ -80,12 +83,13 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                     continue
                 else:
                     shop.save()
-
-                #执行完，把一下页放入待执行列表
-                if self.pageno < 100:
-                    self.pageno = self.pageno+1
-                    self.id = None #id必须设置为空，否则无放入到运行队列里
-                    BaseHttpGet.pushHttpGet(self)
+            pass
+            print("数据抓取结束",self.url)
+            # 执行完，把一下页放入待执行列表
+            if self.pageno < 100:
+                self.pageno = self.pageno + 1
+                self.id = None  # id必须设置为空，否则无放入到运行队列里
+                BaseHttpGet.pushHttpGet(self)
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:",e)
 

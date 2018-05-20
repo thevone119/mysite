@@ -4,10 +4,13 @@
 from mysite.libs import myredis
 import pickle
 import time
+import threading
 
 TB_POOL_ISG = "TB:isg"  # 淘宝的isg,cookie存放在这里,先进先出队列,用线程抓取一批isg到这里存储，做备用
 TB_POOL_EXIST = "TB:EX:"  # 判断是否重复，存放48小时
 
+# 引入锁
+L = threading.Lock()
 
 # 放入isg
 def pushISG(isg=None):
@@ -25,10 +28,15 @@ def popISG():
 # 如果存在，则返回True
 # 如果不存在，则存入缓存，返回False
 def existKey(k=None):
-    r = myredis.getRedis()
-    key = TB_POOL_EXIST + str(k)
-    if r.exists(key):
-        return True
-    else:
-        r.set(key, None, ex=60 * 60 * 24 * 2)
+    L.acquire()
+    try:
+        key = TB_POOL_EXIST + str(k)
+        if myredis.exists(key):
+            return True
+        else:
+            myredis.set(key, None, ex=60 * 60 * 24 * 2)
+    except Exception:
+        pass
+    finally:
+        L.release()
     return False

@@ -78,5 +78,6 @@ def do_http():
 
 if __name__ == '__main__':
     init_shop_search()
-    sched.start()
+    do_http()
+    #sched.start()
     pass

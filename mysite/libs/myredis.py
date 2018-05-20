@@ -66,7 +66,7 @@ def rpush( name=None, *values):
     r = getRedis()
     L_QUEUE.acquire()
     try:
-        return r.rpush(name,values)
+        return r.rpush(name,*values)
     except Exception:
         pass
     finally:

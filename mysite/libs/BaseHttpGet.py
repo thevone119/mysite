@@ -2,8 +2,10 @@
 import requests
 import time
 from mysite.app.ipproxy import ippool
+from mysite.app.ipproxy import models
 from mysite.libs import myredis
 import pickle
+import json
 
 # 所有数据抓取的基类，所有页面的Get形式的抓取，都实现此类
 class BaseHttpGet(object):
@@ -101,6 +103,7 @@ def pushHttpGet(httpget=None):
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
+
     myredis.rpush("HTTPGET:POOL", pickle.dumps(httpget))
 
 def popHttpGet():
@@ -115,8 +118,7 @@ def popHttpGet():
 
 # 测试类
 class TestHttpGet(BaseHttpGet):
-    url = "http://www.baidu.com/"
-
+    url = "https://www.baidu.com"
     def before(self):
         return False
 
@@ -126,5 +128,11 @@ class TestHttpGet(BaseHttpGet):
 
 
 if __name__ == '__main__':
-    test = TestHttpGet("test")
-    test.run()
+    test = TestHttpGet()
+    pushHttpGet(test)
+    test2 = popHttpGet()
+    print(test.url)
+
+    pass
+
+
