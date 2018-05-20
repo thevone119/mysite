@@ -17,23 +17,21 @@ IPPROXY_POOL_ERROR_KEY = "IP_Exists:"  # 错误的IP，30分钟不加入进来
 
 # 放入池中,放入队列的末尾
 def pushNoCheckIp(ipm=None):
-    r = myredis.getRedis()
-
     # 先判断池中是否已存在，如果存在，在直接返回
-    if r.hexists(IPPROXY_POOL_KEY, ipm.host):
+    if myredis.hexists(IPPROXY_POOL_KEY, ipm.host):
         return
 
     # 先判断池中是否已存在，如果存在，在直接返回
-    if r.exists(IPPROXY_POOL_ERROR_KEY + ipm.host):
+    if myredis.exists(IPPROXY_POOL_ERROR_KEY + ipm.host):
         return
-    r.hset(IPPROXY_POOL_KEY, ipm.host, None)
+    myredis.hset(IPPROXY_POOL_KEY, ipm.host, None)
 
     # 30分钟内，不重复加入
-    r.set(IPPROXY_POOL_ERROR_KEY + ipm.host, None, ex=60 * 30)
+    myredis.set(IPPROXY_POOL_ERROR_KEY + ipm.host, None, ex=60 * 30)
 
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
-    r.rpush(IPPROXY_POOL_NO_CHECK, pickle.dumps(ipm))
+    myredis.rpush(IPPROXY_POOL_NO_CHECK, pickle.dumps(ipm))
 
 
 # 池中取出，先进先出,如果池中没有，返回None
@@ -50,10 +48,9 @@ def popNoCheckIp():
 
 # 放入池中,放入队列的末尾,循环利用
 def pushCheckIp(ipm=None):
-    r = myredis.getRedis()
-    r.hset(IPPROXY_POOL_KEY, ipm.host, None)
+    myredis.hset(IPPROXY_POOL_KEY, ipm.host, None)
     # 从右边放入队列
-    r.rpush(IPPROXY_POOL_CHECK, pickle.dumps(ipm))
+    myredis.rpush(IPPROXY_POOL_CHECK, pickle.dumps(ipm))
 
 
 # 池中取出，先进先出,如果池中没有,返回None
