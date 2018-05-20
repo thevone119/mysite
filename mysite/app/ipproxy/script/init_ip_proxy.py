@@ -253,17 +253,22 @@ def getproxyType(s):
 
 #检查IP是否有效的方法，如果有效，则存储到数据库中，并且放入有效ip池中
 def checkIp():
-    ipm = ippool.popNoCheckIp()
-    if ipm is None:
-        return
-    ret = ipcommon.checkIpCon(ipm)
-    if ret:
-        ret = ipcommon.checkIpProxy(ipm)
+    try:
+        ipm = ippool.popNoCheckIp()
+        if ipm is None:
+            return
+        ret = ipcommon.checkIpCon(ipm)
         if ret:
-            print("checkIp:" + ipm.host)
-            ipm.check_time = int(time.time())
-            ipm.save()
-            ippool.pushCheckIp(ipm)
+            ret = ipcommon.checkIpProxy(ipm)
+            if ret:
+                print("checkIp:" + ipm.host)
+                ipm.check_time = int(time.time())
+                ipm.save()
+                ippool.pushCheckIp(ipm)
+        pass
+    except Exception as e:
+        print("出错：",e)
+
 
 
 #每分钟检测相关的ip是否有效，如果有效，则放入到可用ip池中
