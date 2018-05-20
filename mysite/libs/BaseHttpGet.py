@@ -85,10 +85,9 @@ def pushHttpGet(httpget=None):
     r = myredis.getRedis()
     # 先判断池中是否已存在，如果存在，在直接返回
     if httpget.id is not None:
-        if r.exists("HTTPGET:ID" + httpget.id):
+        if r.hexists("HTTPGET:ID" , httpget.id):
             return
-        #24小时内不重复
-        r.set("HTTPGET:ID:" + httpget.id, None, ex=60 * 60 * 24)
+        r.hset("HTTPGET:ID",httpget.id,None)
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
@@ -100,7 +99,7 @@ def popHttpGet():
     if httpget is None:
         return None
     if httpget.id is not None:
-        r.delete("HTTPGET:ID:" + httpget.id)
+        r.hdelete("HTTPGET:ID",httpget.id)
     return pickle.loads(httpget)
 
 # 测试类
