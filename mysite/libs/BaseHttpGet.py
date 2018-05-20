@@ -18,6 +18,10 @@ class BaseHttpGet(object):
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3'
     }
 
+    def __init__(self):  # 调用时需传入self相当于this
+
+        pass
+
     # 执行数据爬取 get前调用，如果这个返回False,则整个调用作废掉,默认返回True
     def before(self):
         return True
@@ -95,6 +99,8 @@ def popHttpGet():
     httpget = r.lpop("HTTPGET:POOL")
     if httpget is None:
         return None
+    if httpget.id is not None:
+        r.delete("HTTPGET:ID:" + httpget.id)
     return pickle.loads(httpget)
 
 # 测试类
@@ -110,5 +116,5 @@ class TestHttpGet(BaseHttpGet):
 
 
 if __name__ == '__main__':
-    test = TestHttpGet()
+    test = TestHttpGet("test")
     test.run()
