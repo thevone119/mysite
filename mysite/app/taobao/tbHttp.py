@@ -84,6 +84,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 #执行完，把一下页放入待执行列表
                 if self.pageno < 100:
                     self.pageno = self.pageno+1
+                    self.id = None #id必须设置为空，否则无放入到运行队列里
                     BaseHttpGet.pushHttpGet(self)
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:",e)
