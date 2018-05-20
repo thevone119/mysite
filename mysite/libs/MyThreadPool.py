@@ -5,6 +5,10 @@ import time
 #实现先进先执行的线程处理机制，方便对大量的数据进行线程处理
 #没有采用线程池，线程数太多，可能有内存问题？
 #实现线程的阻塞，达到多少定义的N个线程，则调用会阻塞
+
+# 引入锁
+THREAD_L = threading.Lock()
+
 class MyThreadPool:
     threadFactory = threading.Thread
     currentThread = staticmethod(threading.currentThread)
@@ -16,11 +20,9 @@ class MyThreadPool:
         self.name = name
 
     def callInThread(self, func, *args, **kw):
-        while self.workingq.full():
-            time.sleep(0.1)
+        self.workingq.put(1)
         o = (func, args, kw, None)
         self.q.put(o)
-        self.workingq.put(1)
         name = "PoolThread-%s" % (self.name or id(self))
         newThread = self.threadFactory(target=self._worker, name=name)
         newThread.start()
@@ -46,6 +48,7 @@ class MyThreadPool:
                 pass
         finally:
             self.workingq.get()
+            pass
         del function, args, kwargs
 
         if onResult is not None:
@@ -72,8 +75,9 @@ if __name__ == '__main__':
     pool = MyThreadPool(10)
 
     for i in range(1,10000):
+        print("call:", i)
         pool.callInThread(testfunc1)
-        print("call:",i)
+
 
     pool.wait()
     print("wait:")
