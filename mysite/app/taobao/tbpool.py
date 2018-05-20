@@ -11,14 +11,12 @@ TB_POOL_EXIST = "TB:EX:"  # 判断是否重复，存放48小时
 
 # 放入isg
 def pushISG(isg=None):
-    r = myredis.getRedis()
-    r.rpush(TB_POOL_ISG, isg)
+    myredis.rpush(TB_POOL_ISG, isg)
 
 
 # 取出isg
 def popISG():
-    r = myredis.getRedis()
-    isg = r.lpop(TB_POOL_ISG)
+    isg = myredis.lpop(TB_POOL_ISG)
     isg = isg.decode()
     return isg
 
