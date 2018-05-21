@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-#对mysql数据库操作的封装
+# 对mysql数据库操作的封装
 
 import MySQLdb
 from MySQLdb.cursors import DictCursor
 from DBUtils.PooledDB import PooledDB
+
 # from PooledDB import PooledDB
 
 """ 
@@ -31,9 +32,10 @@ class Mysql(object):
         @return MySQLdb.connection
         """
         if Mysql.__pool is None:
-            __pool = PooledDB(creator=MySQLdb, mincached=1, maxcached=20,
-                              host="127.0.0.1", port="3333", user="root", passwd="888",
-                              db="map", use_unicode=False, charset="utf-8", cursorclass=DictCursor)
+            # __pool = PooledDB(creator=MySQLdb, mincached=1, maxcached=30,host="localhost", port="3333", user="root", passwd="888",db="map", use_unicode=False,  cursorclass=DictCursor)
+            __pool = PooledDB(MySQLdb, mincached=5, maxcached=30, host='localhost', user='root', passwd='888', db='map',
+                              port=3333)
+
         return __pool.connection()
 
     def getAll(self, sql, param=None):
@@ -166,9 +168,18 @@ class Mysql(object):
             self.end('rollback');
         self._cursor.close()
         self._conn.close()
+
+    def close(self, isEnd=1):
+        """
+          @summary: 释放连接池资源
+        """
+        self.dispose(isEnd)
+
 if __name__ == '__main__':
     # 申请资源
     mysql = Mysql()
-
-
+    sql = "select count(*) from t_tb_shop"
+    ret = mysql.getOne(sql)
+    print(ret)
+    mysql.dispose()
     print("wait:")
