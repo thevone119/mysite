@@ -5,7 +5,41 @@ from mysite.app.ipproxy import ippool
 from mysite.app.ipproxy import models
 from mysite.libs import myredis
 import pickle
+import http.client
 import json
+import queue
+import threading
+
+
+# 引入锁
+THREAD_L = threading.Lock()
+HTTP_POOL = None
+HTTP_COUNT = 0
+
+def getSessionPool():
+    global HTTP_POOL,HTTP_COUNT
+    max_connect = 20
+    #同步代码块
+    THREAD_L.acquire()
+    HTTP_COUNT = HTTP_COUNT+1
+    #如果是空的，初始化连接，如果超过5000次请求，也重新初始化连接
+    if HTTP_POOL is None:
+        HTTP_POOL = queue.Queue(0)
+        requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        for i in range(max_connect):
+            HTTP_POOL.put(requests.Session())
+    if HTTP_COUNT > 5000:
+        print("重新初始化连接------------------------")
+        HTTP_COUNT = 0
+        requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        for i in range(max_connect):
+            s = HTTP_POOL.get()
+            s.close()
+            HTTP_POOL.put(requests.Session())
+    THREAD_L.release()
+    s = HTTP_POOL.get()
+    HTTP_POOL.put(s)
+    return s
 
 # 所有数据抓取的基类，所有页面的Get形式的抓取，都实现此类
 class BaseHttpGet(object):
@@ -74,7 +108,13 @@ class BaseHttpGet(object):
                 return False
         else:
             try:
-                r = requests.get(self.url, headers=self.headers, allow_redirects=True, verify=False)
+
+                #requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+                #http.client.HTTPConnection._http_vsn = 10
+                #http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+                s = getSessionPool()
+
+                r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False)
                 r.encoding = self.encoding
                 return self.parse(r)
             except Exception:

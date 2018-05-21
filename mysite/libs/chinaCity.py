@@ -35,9 +35,10 @@ def listAllCity():
 
 
 if __name__ == '__main__':
-    while True:
-        list = listAllCity()
-        for i in list:
-            print("call:",i)
+    list = listAllCity()
+    print(len(list))
+    for i in list:
+        print("call:", i)
+
 
 

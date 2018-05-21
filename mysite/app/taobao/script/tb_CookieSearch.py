@@ -25,6 +25,10 @@ def initWebDriver():
 
 
 
+def closeWebDriver():
+    global itemdriver
+    itemdriver.close()
+
 def initCookie():
     initWebDriver()
     global itemdriver
@@ -42,9 +46,10 @@ def initCookie():
 
 
 if __name__ == '__main__':
-    for i in range(10000):
+    for i in range(5000):
         initCookie()
     pass
+    closeWebDriver()
 
 
 

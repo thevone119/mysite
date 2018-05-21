@@ -13,6 +13,7 @@ import django
 import json
 import urllib
 from mysite.libs import MyThreadPool
+import threadpool
 
 from mysite.libs import BaseHttpGet
 from mysite.libs import chinaCity
@@ -56,17 +57,17 @@ def do_http_job():
     job = sched.get_job(job_id="do_http_job")
     next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
 
-    tpool = MyThreadPool.MyThreadPool(10)
+    tpool = MyThreadPool.MyThreadPool(40)
     for i in range(10000):
         now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-        if next - now < 5:
-            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 结束----")
+        if next - now < 3:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i , "do_http_job 结束--------------------------------------------------------")
             return
-        tpool.callInThread(do_http)
+        tpool.callInThread(do_http,i)
     pass
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 提前结束----")
 
-def do_http():
+def do_http(i):
     http = BaseHttpGet.popHttpGet()
     if http is None:
         return

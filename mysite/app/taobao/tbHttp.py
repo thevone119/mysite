@@ -52,10 +52,12 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
     # 如果这个返回False,则代表调用失败，重新加入调用列表
     def parse(self, response):
         try:
+            LAST_TIME = time.time()
             rettext = response.text
             # 成功的话，必然包含下面的字符串
             if rettext.find("g_page_config =") == -1:
-                print("数据抓取错误：", rettext, CRA_COUNT)
+                if CRA_COUNT % 50 == 0:
+                    print("数据抓取错误：", rettext, CRA_COUNT)
                 return False
             g_pagestr = stringExt.extractLine(rettext, "g_page_config", "pageName")
 
@@ -94,7 +96,9 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 else:
                     shop.save()
             pass
-            print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
+            #每20条输出一条
+            if CRA_COUNT%50==0:
+                print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount,int(time.time()-LAST_TIME))
             # 执行完，把一下页放入待执行列表
             if self.pageno < 100:
                 self.pageno = self.pageno + 1
@@ -120,11 +124,11 @@ class TestHttpGet(BaseHttpGet.BaseHttpGet):
 
 
 if __name__ == '__main__':
-    print(urllib.parse.urlencode({"q": "吃"}))
+    print(urllib.parse.urlencode({"q": "ddd","loc":""}))
     test = TBShopSearchCrawer()
     test.city = "广州"
     test.q = "吃"
 
-    test.run()
+    #test.run()
 
     pass
