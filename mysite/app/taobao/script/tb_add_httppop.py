@@ -12,18 +12,16 @@ from mysite.app.taobao import tbHttp
 def init_shop_search():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 开始----")
     cityl = chinaCity.listAllCity()
-    catl = tbcategory.listAllCat()
+    cat = tbcategory.getFristQueryKey()
     count=0
     for city in cityl:
-        for cat in catl:
-            tshop = tbHttp.TBShopSearchCrawer()
-            tshop.pageno=1
-            tshop.q=cat
-            tshop.city=city
-            tshop.id="shop_search,"+cat+city
-            BaseHttpGet.pushHttpGet(tshop)
-            count =count +1
-        pass
+        tshop = tbHttp.TBShopSearchCrawer()
+        tshop.pageno = 1
+        tshop.q = cat
+        tshop.city = city
+        tshop.id = "shop_search," + cat + city
+        BaseHttpGet.pushHttpGet(tshop)
+        count = count + 1
 
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 结束----",count)
 
