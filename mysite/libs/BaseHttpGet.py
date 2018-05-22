@@ -117,7 +117,8 @@ class BaseHttpGet(object):
                 r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False)
                 r.encoding = self.encoding
                 return self.parse(r)
-            except Exception:
+            except Exception as e:
+                print("BaseHttpGet run 错误",e)
                 pass
                 return False
 

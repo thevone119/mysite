@@ -35,6 +35,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
         CRA_COUNT = CRA_COUNT + 1
         L_CAT.release()
         isg = tbpool.popISG()
+
         tbpool.pushISG(isg)
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3',
@@ -52,7 +53,6 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
     # 如果这个返回False,则代表调用失败，重新加入调用列表
     def parse(self, response):
         try:
-            LAST_TIME = time.time()
             rettext = response.text
             # 成功的话，必然包含下面的字符串
             if rettext.find("g_page_config =") == -1:
@@ -72,6 +72,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
             page = json.loads(g_pagestr)
             items = page["mods"]["shoplist"]["data"]["shopItems"]
             itemcount = 0
+            sesscount = 0
             for item in items:
                 itemcount = itemcount + 1
                 shop = models.TTbShop()
@@ -95,15 +96,22 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                     continue
                 else:
                     shop.save()
+                    sesscount = sesscount + 1
             pass
-            #每20条输出一条
-            if CRA_COUNT%50==0:
-                print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount,int(time.time()-LAST_TIME))
+            # 如果整页都没有一条新的的，则直接去到最后一页
+            if sesscount == 0:
+                self.pageno = 101
+            # 每20条输出一条
+            if CRA_COUNT % 50 == 0:
+                print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
             # 执行完，把一下页放入待执行列表
             if self.pageno < 100:
                 self.pageno = self.pageno + 1
                 self.id = None  # id必须设置为空，否则无放入到运行队列里
                 BaseHttpGet.pushHttpGet(self)
+            else:
+
+                pass
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:", e)
 
@@ -124,11 +132,11 @@ class TestHttpGet(BaseHttpGet.BaseHttpGet):
 
 
 if __name__ == '__main__':
-    print(urllib.parse.urlencode({"q": "ddd","loc":""}))
+    print(urllib.parse.urlencode({"q": "ddd", "loc": ""}))
     test = TBShopSearchCrawer()
     test.city = "广州"
     test.q = "吃"
 
-    #test.run()
+    # test.run()
 
     pass

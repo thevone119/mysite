@@ -20,6 +20,8 @@ def pushISG(isg=None):
 # 取出isg
 def popISG():
     isg = myredis.lpop(TB_POOL_ISG)
+    if isg is None:
+        return None
     isg = isg.decode()
     return isg
 

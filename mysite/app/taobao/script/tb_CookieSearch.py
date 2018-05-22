@@ -46,7 +46,7 @@ def initCookie():
 
 
 if __name__ == '__main__':
-    for i in range(5000):
+    for i in range(6000):
         initCookie()
     pass
     closeWebDriver()

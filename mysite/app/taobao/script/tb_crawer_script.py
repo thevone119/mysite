@@ -63,11 +63,11 @@ def do_http_job():
         if next - now < 3:
             print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i , "do_http_job 结束--------------------------------------------------------")
             return
-        tpool.callInThread(do_http,i)
+        tpool.callInThread(do_http)
     pass
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 提前结束----")
 
-def do_http(i):
+def do_http(i=None):
     http = BaseHttpGet.popHttpGet()
     if http is None:
         return
@@ -81,4 +81,5 @@ if __name__ == '__main__':
     #init_shop_search()
     #do_http()
     sched.start()
+    #do_http()
     pass

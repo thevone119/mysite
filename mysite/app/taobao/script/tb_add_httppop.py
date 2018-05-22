@@ -14,16 +14,16 @@ def init_shop_search():
     cityl = chinaCity.listAllCity()
     catl = tbcategory.listAllCat()
     count=0
-
-    for cat in catl:
-        tshop = tbHttp.TBShopSearchCrawer()
-        tshop.pageno=1
-        tshop.q=cat
-        tshop.city=""
-        tshop.id="shop_search,"+cat
-        BaseHttpGet.pushHttpGet(tshop)
-        count =count +1
-    pass
+    for city in cityl:
+        for cat in catl:
+            tshop = tbHttp.TBShopSearchCrawer()
+            tshop.pageno=1
+            tshop.q=cat
+            tshop.city=city
+            tshop.id="shop_search,"+cat+city
+            BaseHttpGet.pushHttpGet(tshop)
+            count =count +1
+        pass
 
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 结束----",count)
 
