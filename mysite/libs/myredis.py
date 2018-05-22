@@ -34,7 +34,8 @@ def hset( name=None, key=None, value=None):
     try:
         return r.hset(name,key,value)
     except Exception as e:
-        print("hset错误", e)
+        print("Redis hset错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -46,7 +47,8 @@ def hget( name=None, key=None):
     try:
         return r.hget(name,key)
     except Exception as e:
-        print("hget错误", e)
+        print("Redis hget错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -58,7 +60,8 @@ def hdel( name=None, key=None):
     try:
         return r.hdel(name,key)
     except Exception as e:
-        print("hdel错误", e)
+        print("Redis hdel错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -71,7 +74,8 @@ def rpush( name=None, *values):
     try:
         return r.rpush(name,*values)
     except Exception as e:
-        print("rpush错误",e )
+        print("Redis rpush错误",e )
+        raise e
         pass
     finally:
         L_QUEUE.release()
@@ -83,7 +87,8 @@ def lpop( name=None):
     try:
         return r.lpop(name)
     except Exception as e:
-        print("lpop错误", e)
+        print("Redis lpop错误", e)
+        raise e
         pass
     finally:
         L_QUEUE.release()
@@ -95,7 +100,8 @@ def hexists(name=None,key=None):
     try:
         return r.hexists(name,key)
     except Exception as e:
-        print("hexists错误", e)
+        print("Redis hexists错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -107,7 +113,8 @@ def set(name=None,value=None,ex =None):
     try:
         return r.set(name,value,ex=ex)
     except Exception as e:
-        print("set错误", e)
+        print("Redis set错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -118,7 +125,8 @@ def get(name=None):
     try:
         return r.get(name)
     except Exception as e:
-        print("get错误", e)
+        print("Redis get错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
@@ -129,7 +137,21 @@ def exists(name=None):
     try:
         return r.exists(name)
     except Exception as e:
-        print("exists错误", e)
+        print("Redis exists错误", e)
+        raise e
         pass
     finally:
         L_HM.release()
+
+
+#计数器自增
+def incr(name, amount=1):
+    r = getRedis()
+    try:
+        return r.incr(name,amount=amount)
+    except Exception as e:
+        print("Redis incr错误", e)
+        raise e
+        pass
+    finally:
+        pass
