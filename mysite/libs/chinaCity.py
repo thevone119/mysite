@@ -58,8 +58,41 @@ def listAllCity():
     return list
 
 
+
+CITY_LIST = None
+# 引入锁
+L = threading.Lock()
+
+
+def __initCity_List():
+    global CITY_LIST
+    L.acquire()
+    if CITY_LIST is None:
+        CITY_LIST = listAllCity()
+    pass
+    L.release()
+
+
+# 获取第一个querykey
+def getFristCity():
+    __initCity_List()
+    return CITY_LIST[0]
+
+
+# 获取下一个querykey
+def getNextCity(city=None):
+    __initCity_List()
+    iseq = False
+    for v in CITY_LIST:
+        if iseq:
+            return v
+        if v == city:
+            iseq = True
+    pass
+    return None
+
+
 if __name__ == '__main__':
     list = listAllCity()
-    print(len(list))
-    for i in list:
-        print("call:", i)
+    print(getNextCity("湛江"))
+
