@@ -111,9 +111,9 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 self.id = None  # id必须设置为空，否则无放入到运行队列里
                 BaseHttpGet.pushHttpGet(self)
             else:
-                n_city =tbcategory.getNextQueryKey(self.city)
-                if n_city is not None:
-                    self.city = n_city
+                n_q =tbcategory.getNextQueryKey(self.q)
+                if n_q is not None:
+                    self.q = n_q
                     self.id = None  # id必须设置为空，否则无放入到运行队列里
                     self.pageno = 1
                     BaseHttpGet.pushHttpGet(self)
