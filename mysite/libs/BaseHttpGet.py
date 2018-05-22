@@ -14,23 +14,23 @@ import threading
 # 引入锁
 THREAD_L = threading.Lock()
 HTTP_POOL = None
-HTTP_COUNT = 0
+#记录最后初始化的时间，2分钟重新生成连接池
+HTTP_POOL_TIME = int(time.time())
 
 def getSessionPool():
-    global HTTP_POOL,HTTP_COUNT
+    global HTTP_POOL,HTTP_POOL_TIME
     max_connect = 20
     #同步代码块
     THREAD_L.acquire()
-    HTTP_COUNT = HTTP_COUNT+1
     #如果是空的，初始化连接，如果超过5000次请求，也重新初始化连接
     if HTTP_POOL is None:
         HTTP_POOL = queue.Queue(0)
         requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
         for i in range(max_connect):
             HTTP_POOL.put(requests.Session())
-    if HTTP_COUNT > 5000:
-        print("重新初始化连接------------------------")
-        HTTP_COUNT = 0
+    if time.time()-HTTP_POOL_TIME > 60*2:
+        print("--------------重新初始化HTTP连接池连接------------------------")
+        HTTP_POOL_TIME = int(time.time())
         requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
         for i in range(max_connect):
             s = HTTP_POOL.get()

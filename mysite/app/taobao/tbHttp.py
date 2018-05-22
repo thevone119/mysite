@@ -49,6 +49,15 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
         self.url = turl.format(now, self.pageno, q)
         return True
 
+    def nextQuery(self):
+        n_q = tbcategory.getNextQueryKey(self.q)
+        if n_q is not None:
+            self.q = n_q
+            self.id = None  # id必须设置为空，否则无放入到运行队列里
+            self.pageno = 1
+            BaseHttpGet.pushHttpGet(self)
+        return
+
     # 这个方法由子类实现，爬虫爬取完成后，会调用此方法
     # 如果这个返回True，则代表调用成功，移除出调用列表
     # 如果这个返回False,则代表调用失败，重新加入调用列表
@@ -68,12 +77,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
             g_pagestr = g_pagestr[:len(g_pagestr) - 1]
             # 如果没有shopItems，则抓取结束了
             if g_pagestr.find("shopItems") == -1:
-                n_q = tbcategory.getNextQueryKey(self.q)
-                if n_q is not None:
-                    self.q = n_q
-                    self.id = None  # id必须设置为空，否则无放入到运行队列里
-                    self.pageno = 1
-                    BaseHttpGet.pushHttpGet(self)
+                self.nextQuery()
                 return True
             page = json.loads(g_pagestr)
             items = page["mods"]["shoplist"]["data"]["shopItems"]
@@ -81,9 +85,19 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
             sesscount = 0
             for item in items:
                 itemcount = itemcount + 1
-                shop = models.TTbShop()
                 shopurl = item["shopUrl"]
-                shop.shopid = self.paseInt(shopurl[shopurl.find("shop") + 4:shopurl.find(".taobao")])
+                shopid = self.paseInt(shopurl[shopurl.find("shop") + 4:shopurl.find(".taobao")])
+                #如果在缓存中存在，则直接跳过
+                if tbpool.existKey(shopid):
+                    continue
+                #查找数据库中是否存在，如果存在，则直接跳过，如果不存在，则新建一个,避免了把旧的数据替换掉的问题
+                shop = models.TTbShop.objects.filter(shopid=shopid).first()
+                if shop is None:
+                    sesscount = sesscount + 1
+                    shop = models.TTbShop()
+                    shop.shopid = shopid
+                else:
+                    continue
                 shop.mainpage = shopurl
                 shop.uid = self.paseInt(item["uid"])
                 shop.nick = item["nick"]
@@ -96,13 +110,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                     shop.shop_type = "TM"
                 else:
                     shop.shop_type = "TB"
-
-                # 如果已经存在，则不处理，否则存储
-                if tbpool.existKey(shop.shopid):
-                    continue
-                else:
-                    shop.save()
-                    sesscount = sesscount + 1
+                shop.save()
             pass
             # 如果整页都没有一条新的的，则直接跳过10页
             if sesscount == 0:
@@ -116,13 +124,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 self.id = None  # id必须设置为空，否则无放入到运行队列里
                 BaseHttpGet.pushHttpGet(self)
             else:
-                n_q =tbcategory.getNextQueryKey(self.q)
-                if n_q is not None:
-                    self.q = n_q
-                    self.id = None  # id必须设置为空，否则无放入到运行队列里
-                    self.pageno = 1
-                    BaseHttpGet.pushHttpGet(self)
-                pass
+                self.nextQuery()
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:", e)
             return False
