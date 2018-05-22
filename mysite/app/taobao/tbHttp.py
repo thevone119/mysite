@@ -6,6 +6,7 @@ from mysite.libs import myredis
 from mysite.libs import stringExt
 from mysite.app.taobao import models
 from mysite.app.taobao import tbpool
+from mysite.app.taobao import tbcategory
 import django
 import json
 import urllib
@@ -98,19 +99,24 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                     shop.save()
                     sesscount = sesscount + 1
             pass
-            # 如果整页都没有一条新的的，则直接去到最后一页
+            # 如果整页都没有一条新的的，则直接跳过10页
             if sesscount == 0:
-                self.pageno = 101
+                self.pageno = self.pageno+10
             # 每20条输出一条
             if CRA_COUNT % 50 == 0:
                 print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
-            # 执行完，把一下页放入待执行列表
+            # 执行完，把一下页放入待执行列表,如果超过100页，则把下一个关键字放入
             if self.pageno < 100:
                 self.pageno = self.pageno + 1
                 self.id = None  # id必须设置为空，否则无放入到运行队列里
                 BaseHttpGet.pushHttpGet(self)
             else:
-
+                n_city =tbcategory.getNextQueryKey(self.city)
+                if n_city is not None:
+                    self.city = n_city
+                    self.id = None  # id必须设置为空，否则无放入到运行队列里
+                    self.pageno = 1
+                    BaseHttpGet.pushHttpGet(self)
                 pass
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:", e)
