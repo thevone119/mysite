@@ -68,7 +68,12 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
             g_pagestr = g_pagestr[:len(g_pagestr) - 1]
             # 如果没有shopItems，则抓取结束了
             if g_pagestr.find("shopItems") == -1:
-                myredis.set("TB:ShopSearch:" + self.q + "," + self.city, None, ex=60 * 60 * 6)
+                n_q = tbcategory.getNextQueryKey(self.q)
+                if n_q is not None:
+                    self.q = n_q
+                    self.id = None  # id必须设置为空，否则无放入到运行队列里
+                    self.pageno = 1
+                    BaseHttpGet.pushHttpGet(self)
                 return True
             page = json.loads(g_pagestr)
             items = page["mods"]["shoplist"]["data"]["shopItems"]
@@ -120,7 +125,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 pass
         except Exception as e:
             print("TBShopSearchCrawer数据解析出错:", e)
-
+            return False
         return True
         pass
 
