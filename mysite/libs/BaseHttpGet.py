@@ -7,6 +7,7 @@ from mysite.libs import myredis
 import pickle
 import http.client
 import json
+import random
 import queue
 import threading
 
@@ -58,6 +59,10 @@ class BaseHttpGet(object):
 
         pass
 
+    def _randomIp(self):
+        return str(random.randint(14, 150)) + "." + str(random.randint(0, 255)) + "." + str(
+            random.randint(0, 255)) + "." + str(random.randint(0, 255))
+
     # 执行数据爬取 get前调用，如果这个返回False,则整个调用作废掉,默认返回True
     def before(self):
         return True
@@ -93,6 +98,8 @@ class BaseHttpGet(object):
                     "http": proxy,
                     "https": proxy,
                 }
+                self.headers["HTTP_X_FORWARDED_FOR"] = self._randomIp()
+                self.headers["HTTP_CF_CONNECTING_IP"] = self._randomIp()
                 requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
                 r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False)
                 r.encoding = self.encoding
