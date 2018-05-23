@@ -232,7 +232,7 @@ def ip66_query():
 @sched.scheduled_job('interval', seconds=60)
 def mydb_query():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip开始-----")
-    iplist = models.TIpProxy.objects.order_by("-check_time").all()[:200]
+    iplist = models.TIpProxy.objects.order_by("-check_time").all()[:1000]
     for ipm in iplist:
         ippool.pushNoCheckIp(ipm)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "从数据库中获取有效的ip结束-----",len(iplist))

@@ -86,16 +86,18 @@ class MyThreadPool2:
         self.tpool.wait()
 
 if __name__ == '__main__':
-    def testfunc1(str=None):
-        time.sleep(2)
-        print("test")
+    from mysite.libs import myredis
+    r = myredis.getRedis()
+    def testfunc1(s=None):
+        r.incrby("incrby",10)
+
         return False
 
     pool = MyThreadPool(10)
 
-    for i in range(1,1000):
+    for i in range(1000):
         print("call:", i)
-        pool.callInThread(testfunc1)
+        pool.callInThread(testfunc1,i)
 
     pool.wait()
 

@@ -6,7 +6,7 @@ import threading
 import datetime
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
-from mysite.libs import stringExt
+from mysite.libs import myredis
 from mysite.app.taobao import models
 from mysite.app.taobao import tbpool
 import django
@@ -68,7 +68,7 @@ def do_http_job():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 提前结束----")
 
 def do_http(i=None):
-    http = BaseHttpGet.popHttpGet()
+    http = BaseHttpGet.popHttpGet(tbHttp.TBShopSearchCrawer.__name__)
     if http is None:
         return
     if http.run():
@@ -76,6 +76,22 @@ def do_http(i=None):
     else:
         BaseHttpGet.pushHttpGet(http)
         pass
+
+
+def do_update_shop_create_time():
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 开始----")
+    count = BaseHttpGet.getHttpGetPoolCount(tbHttp.TBShopCreateTimeCrawer())
+    if count>0:
+        print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 还有部分数据未处理完",count)
+        return
+    list = models.TTbShop.objects.filter(shop_createtime=None)[0:5000]
+
+    for shop in list:
+        http = tbHttp.TBShopCreateTimeCrawer()
+        http.shopid = shop.shopid
+        BaseHttpGet.pushHttpGet(http)
+    pass
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 结束----")
 
 if __name__ == '__main__':
     #init_shop_search()

@@ -7,7 +7,8 @@ import time
 import threading
 
 TB_POOL_ISG = "TB:isg"  # 淘宝的isg,cookie存放在这里,先进先出队列,用线程抓取一批isg到这里存储，做备用
-TB_POOL_EXIST = "TB:EX:"  # 判断是否重复，存放48小时
+TB_POOL_SHOPID = "TB:SHOPID"  # 淘宝的shopid
+TB_POOL_PRODID = "TB:PRODID"  # 淘宝的prodid
 
 # 引入锁
 L = threading.Lock()
@@ -26,19 +27,19 @@ def popISG():
     return isg
 
 
-# 判断是否存在，
+# 判断shopid是否存在，
 # 如果存在，则返回True
 # 如果不存在，则存入缓存，返回False
-def existKey(k=None):
-    L.acquire()
-    try:
-        key = TB_POOL_EXIST + str(k)
-        if myredis.exists(key):
-            return True
-        else:
-            myredis.set(key, None, ex=60 * 60 * 24 * 2)
-    except Exception:
-        pass
-    finally:
-        L.release()
-    return False
+def ShopIdExist(shopid=None):
+    if myredis.hexists(TB_POOL_SHOPID, shopid):
+        return True
+    else:
+        myredis.hset(TB_POOL_SHOPID, shopid, None)
+        return False
+
+def prodIdExist(prodId=None):
+    if myredis.hexists(TB_POOL_PRODID, prodId):
+        return True
+    else:
+        myredis.hset(TB_POOL_PRODID, prodId, None)
+        return False

@@ -90,10 +90,10 @@ def checkIpProxy(ipm=None):
 if __name__ == '__main__':
     def testff():
         ipm = models.TIpProxy()
-        ipm.host = "127.0.0.1:3333"
-        print(checkIpCon(ipm))
+        ipm.host = "175.153.91.108:43056"
+        print(checkIpProxy(ipm))
 
     from mysite.libs import MyThreadPool
-    tpool = MyThreadPool.MyThreadPool(8)
-    for i in range(20):
+    tpool = MyThreadPool.MyThreadPool(1)
+    for i in range(1):
         tpool.callInThread(testff)

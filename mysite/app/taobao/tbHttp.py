@@ -88,7 +88,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 shopurl = item["shopUrl"]
                 shopid = self.paseInt(shopurl[shopurl.find("shop") + 4:shopurl.find(".taobao")])
                 #如果在缓存中存在，则直接跳过
-                if tbpool.existKey(shopid):
+                if tbpool.ShopIdExist(shopid):
                     continue
                 #查找数据库中是否存在，如果存在，则直接跳过，如果不存在，则新建一个,避免了把旧的数据替换掉的问题
                 shop = models.TTbShop.objects.filter(shopid=shopid).first()
@@ -132,6 +132,47 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
         pass
 
 
+#获取淘宝的店铺的创建时间
+class TBShopCreateTimeCrawer(BaseHttpGet.BaseHttpGet):
+    shopid=None
+    isProxy = True
+    # 执行数据爬取前先设置headers
+    def before(self):
+        self.isProxy = True
+        global CRA_COUNT
+        L_CAT.acquire()
+        CRA_COUNT = CRA_COUNT + 1
+        L_CAT.release()
+        isg = tbpool.popISG()
+        tbpool.pushISG(isg)
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3',
+            'cookie': 'isg={}'.format(isg)
+        }
+        now = time.strftime("%Y%m%d", time.localtime())
+        rd = time.time()
+        turl = "https://shop.taobao.com/getShopInfo.htm?shopId={0}&staobaoz_{1}&rd={2}"
+        self.url = turl.format(self.shopid,now, rd)
+        return True
+
+    def parse(self, response):
+        try:
+            shopCreatetime = stringExt.ExtStr(response.text,"starts\":\"","\"}")
+            if shopCreatetime == None:
+                print("获取时间失败", response.text)
+                return False
+            #更新数据
+            shop = models.TTbShop.objects.get(shopid=self.shopid)
+            shop.shop_createtime = shopCreatetime
+            shop.save()
+            print("获取时间成功", self.shopid)
+        except Exception as e:
+            print("TBShopCreateTimeCrawer数据解析出错:", e)
+            return False
+        return True
+
+
+
 # 测试类
 class TestHttpGet(BaseHttpGet.BaseHttpGet):
     url = "http://www.baidu.com/"
@@ -145,11 +186,11 @@ class TestHttpGet(BaseHttpGet.BaseHttpGet):
 
 
 if __name__ == '__main__':
-    print(urllib.parse.urlencode({"q": "ddd", "loc": ""}))
-    test = TBShopSearchCrawer()
-    test.city = "广州"
-    test.q = "吃"
+    TBShopCreateTimeCrawer.__class__
+    test = TBShopCreateTimeCrawer()
+    test.shopid = 10202414
+    print(type(test.__class__.__name__))
 
-    # test.run()
+    #test.run()
 
     pass

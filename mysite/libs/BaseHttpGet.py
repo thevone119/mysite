@@ -148,13 +148,14 @@ def pushHttpGet(httpget=None):
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
-    n = "HTTPGET:"+httpget.__class__.__name__
+
     myredis.rpush("HTTPGET:"+httpget.__class__.__name__, pickle.dumps(httpget))
 
 
 # 把待爬取的http连接从池中取出
-def popHttpGet(cls=None):
-    hg = myredis.lpop("HTTPGET:"+cls.__name__)
+def popHttpGet(clsName=None):
+    hg = myredis.lpop("HTTPGET:"+clsName)
+
     if hg is None:
         return None
     hg = pickle.loads(hg)
@@ -163,8 +164,8 @@ def popHttpGet(cls=None):
     return hg
 
 #把待爬取的http连接池的总容量（某个类型对象的容量）
-def getHttpGetPoolCount(cls=None):
-    c = myredis.llen("HTTPGET:"+cls.__name__)
+def getHttpGetPoolCount(clsName=None):
+    c = myredis.llen("HTTPGET:"+clsName)
     if c is None:
         return 0
     return int(c)
@@ -183,7 +184,7 @@ class TestHttpGet(BaseHttpGet):
 if __name__ == '__main__':
     test = TestHttpGet()
     pushHttpGet(test)
-    test2 = popHttpGet()
+    test2 = popHttpGet(TestHttpGet.__name__)
     print(test.url)
 
     pass
