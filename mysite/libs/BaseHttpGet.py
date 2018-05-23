@@ -141,13 +141,14 @@ class BaseHttpGet(object):
 def pushHttpGet(httpget=None):
     # 先判断池中是否已存在，如果存在，在直接返回
     if httpget.id is not None:
-        if myredis.hexists("HTTPGET:ID" , httpget.id):
+        if myredis.hexists("HTTPGET_ID" , httpget.id):
             return
         else:
-            myredis.hset("HTTPGET:ID",httpget.id,None)
+            myredis.hset("HTTPGET_ID",httpget.id,None)
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
+    n = "HTTPGET:"+httpget.__class__.__name__
     myredis.rpush("HTTPGET:"+httpget.__class__.__name__, pickle.dumps(httpget))
 
 
@@ -158,7 +159,7 @@ def popHttpGet(cls=None):
         return None
     hg = pickle.loads(hg)
     if hg.id is not None:
-        myredis.hdel("HTTPGET:ID",hg.id)
+        myredis.hdel("HTTPGET_ID",hg.id)
     return hg
 
 #把待爬取的http连接池的总容量（某个类型对象的容量）
