@@ -13,7 +13,8 @@ L_QUEUE = threading.Lock()
 L_OTHER = threading.Lock()
 
 REDIS_POOL = None
-#只返回一个公共的连接
+REDIS_POOL3 = None
+#只返回一个公共的连接，多个连接在多线程环境会有问题
 def getRedis():
     global REDIS_POOL
     L_INIT.acquire()
@@ -28,11 +29,28 @@ def getRedis():
     L_INIT.release()
     return REDIS_POOL
 
+#这个库用来存储大量的数据，比如超过10万的key-vulue
+def getRedis3():
+    global REDIS_POOL3
+    L_INIT.acquire()
+    if REDIS_POOL3 is None:
+        pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=3)
+        REDIS_POOL3 = redis.Redis(connection_pool=pool)
+        print("init Redis")
+    if REDIS_POOL3.ping() is False:
+        pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=3)
+        REDIS_POOL3 = redis.Redis(connection_pool=pool)
+        print("reInit Redis")
+    L_INIT.release()
+    return REDIS_POOL3
+
 def hset( name=None, key=None, value=None):
     r = getRedis()
+
     L_HM.acquire()
     try:
         return r.hset(name,key,value)
+
     except Exception as e:
         print("Redis hset错误", e)
         raise e
@@ -56,9 +74,11 @@ def hget( name=None, key=None):
 
 def hdel( name=None, key=None):
     r = getRedis()
+
     L_HM.acquire()
     try:
         return r.hdel(name,key)
+
     except Exception as e:
         print("Redis hdel错误", e)
         raise e
@@ -121,7 +141,6 @@ def set(name=None,value=None,ex =None):
 
 def get(name=None):
     r = getRedis()
-    L_HM.acquire()
     try:
         return r.get(name)
     except Exception as e:
@@ -129,22 +148,24 @@ def get(name=None):
         raise e
         pass
     finally:
-        L_HM.release()
+        pass
 
 def exists(name=None):
     r = getRedis()
-    L_HM.acquire()
-    try:
-        return r.exists(name)
-    except Exception as e:
-        print("Redis exists错误", e)
-        raise e
-        pass
-    finally:
-        L_HM.release()
+    return r.exists(name)
 
+#返回某个list的长度(容器中的元素个数)
+def llen(name=None):
+    r = getRedis()
+    return r.llen(name)
 
-#计数器自增
+#返回某个Hash的长度(容器中的元素个数)
+def hlen(name=None):
+    r = getRedis()
+    return r.hlen(name)
+
+#计数器自增,自减则-1
+#返回递增后的结果
 def incr(name, amount=1):
     r = getRedis()
     try:
