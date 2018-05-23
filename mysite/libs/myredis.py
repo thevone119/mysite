@@ -164,6 +164,12 @@ def hlen(name=None):
     r = getRedis()
     return r.hlen(name)
 
+
+#返回某类name
+def keys(pattern='*'):
+    r = getRedis()
+    return r.keys(pattern=pattern)
+
 #计数器自增,自减则-1
 #返回递增后的结果
 def incr(name, amount=1):
