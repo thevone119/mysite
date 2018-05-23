@@ -79,9 +79,11 @@ class BaseHttpGet(object):
         if self.before() is False:
             return True
         # 忽略警告
+
         requests.packages.urllib3.disable_warnings()
         if self.isProxy:
             try:
+
                 ipm = ippool.popCheckIp()
                 while ipm is None:
                     ipm = ippool.popCheckIp()
@@ -91,13 +93,15 @@ class BaseHttpGet(object):
                     "http": proxy,
                     "https": proxy,
                 }
+                requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
                 r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False)
                 r.encoding = self.encoding
                 ipm.check_time = int(time.time())
                 ipm.errorCount = 0
                 ippool.pushCheckIp(ipm)
                 return self.parse(r)
-            except Exception:
+            except Exception as e:
+                print("代理异常",ipm.host,e)
                 ipm.errorCount = ipm.errorCount + 1
                 # 3次以内，可以继续使用，错误超过3次，则丢弃
                 if ipm.errorCount < 3:
@@ -144,18 +148,25 @@ def pushHttpGet(httpget=None):
     pass
     # 从右边放入队列
     # print("push:"+ipm.host+","+ipm.src_url)
+    myredis.rpush("HTTPGET:"+httpget.__class__.__name__, pickle.dumps(httpget))
 
-    myredis.rpush("HTTPGET:POOL", pickle.dumps(httpget))
 
-def popHttpGet():
-    hg = myredis.lpop("HTTPGET:POOL")
+# 把待爬取的http连接从池中取出
+def popHttpGet(cls=None):
+    hg = myredis.lpop("HTTPGET:"+cls.__name__)
     if hg is None:
         return None
-
     hg = pickle.loads(hg)
     if hg.id is not None:
         myredis.hdel("HTTPGET:ID",hg.id)
     return hg
+
+#把待爬取的http连接池的总容量（某个类型对象的容量）
+def getHttpGetPoolCount(cls=None):
+    c = myredis.llen("HTTPGET:"+cls.__name__)
+    if c is None:
+        return 0
+    return int(c)
 
 # 测试类
 class TestHttpGet(BaseHttpGet):
