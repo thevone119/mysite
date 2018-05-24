@@ -24,7 +24,6 @@ def initWebDriver():
     itemdriver = webdriver.Chrome(chrome_options=chrome_options)
 
 
-
 def closeWebDriver():
     global itemdriver
     itemdriver.close()
@@ -46,7 +45,7 @@ def initCookie():
 
 
 if __name__ == '__main__':
-    for i in range(7000):
+    for i in range(10000):
         initCookie()
     pass
     closeWebDriver()

@@ -95,6 +95,7 @@ class file_int(object):
 
     #重新初始化文件句柄
     def __re_init_file(self):
+        global L_THREAD
         L_THREAD.acquire()
         if self.file_hand is None:
             self.file_hand = open(self.file_path, "r+b")
@@ -102,6 +103,7 @@ class file_int(object):
 
     #把int存入
     def put_int(self,intv=0,flush=False,close=False):
+        global L_THREAD
         self.__re_init_file()
         if intv is None:
             return
@@ -131,6 +133,7 @@ class file_int(object):
 
     # 把int删除
     def del_int(self, intv=0,flush=False,close=False):
+        global L_THREAD
         self.__re_init_file()
         if intv is None:
             return
@@ -158,6 +161,7 @@ class file_int(object):
 
     #判断是否存在int
     def has_int(self,intv):
+        global L_THREAD
         self.__re_init_file()
         if intv is None:
             return
@@ -196,6 +200,7 @@ if __name__ == '__main__':
         pass
     print("错误--")
     for i in  range(10000):
+        fi.put_int(i)
         if fi.has_int(i):
             #print("正确",i)
             pass

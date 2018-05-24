@@ -93,6 +93,10 @@ class BaseHttpGet(object):
                 while ipm is None:
                     ipm = ippool.popCheckIp()
                     time.sleep(0.1)
+                #1分钟内同一ip不重复使用
+                while (time.time()-ipm.last_use_time)<60:
+                    time.sleep(1)
+                print("使用代理IP进行请求",ipm.host,self.url)
                 proxy = 'http://' + ipm.host
                 proxies = {
                     "http": proxy,
@@ -104,16 +108,18 @@ class BaseHttpGet(object):
                 r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False)
                 r.encoding = self.encoding
                 ipm.check_time = int(time.time())
+                ipm.last_use_time = int(time.time())
                 ipm.errorCount = 0
                 ippool.pushCheckIp(ipm)
                 return self.parse(r)
             except Exception as e:
                 print("代理异常",ipm.host,e)
                 ipm.errorCount = ipm.errorCount + 1
-                # 3次以内，可以继续使用，错误超过3次，则丢弃
-                if ipm.errorCount < 3:
+                # 2次以内，可以继续使用，错误超过2次，则丢弃
+                if ipm.errorCount < 2:
                     ippool.pushCheckIp(ipm)
                 else:
+                    ippool.pushNoCheckIp(ipm)
                     ipm.save()
                 pass
                 return False

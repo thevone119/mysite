@@ -89,6 +89,8 @@ class TTbShopProd(models.Model):
     uid = models.BigIntegerField(db_column='UID', blank=True, null=True)  # Field name made lowercase.
     loc = models.CharField(max_length=20, blank=True, null=True)
 
+
+
     class Meta:
         managed = False
         db_table = 't_tb_shop_prod'

@@ -17,6 +17,7 @@ class TIpProxy(models.Model):
 
     # 非数据库字段定义
     errorCount = 0 #错误次数,累计错误3次，则把IP放入数据库中
+    last_use_time = 0  # 最后使用时间，一般同一个ip在一分钟内不重复使用
 
     class Meta:
         managed = False

@@ -23,52 +23,8 @@ from mysite.app.taobao import tbHttp
 
 sched = BlockingScheduler()
 
-
-
-@sched.scheduled_job('interval', minutes=30)
-def init_shop_search_job():
-    #init_shop_search()
-    pass
-
-
-def init_shop_search():
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 开始----")
-    cityl = chinaCity.listAllCity()
-    catl = tbcategory.listAllCat()
-    count=0
-    for city in cityl:
-        for cat in catl:
-            tshop = tbHttp.TBShopSearchCrawer()
-            tshop.pageno=1
-            tshop.q=cat
-            tshop.city=city
-            tshop.id="shop_search"+city+","+cat
-            BaseHttpGet.pushHttpGet(tshop)
-            count =count +1
-    pass
-
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"init_shop_search 结束----",count)
-
-
-http_lasttime = None
-@sched.scheduled_job('interval',id="do_http_job", seconds=60)
-def do_http_job():
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"do_http_job 开始----")
-    job = sched.get_job(job_id="do_http_job")
-    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
-
-    tpool = MyThreadPool.MyThreadPool(40)
-    for i in range(10000):
-        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-        if next - now < 3:
-            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i , "do_http_job 结束--------------------------------------------------------")
-            return
-        tpool.callInThread(do_http)
-    pass
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_http_job 提前结束----")
-
-def do_http(i=None):
-    http = BaseHttpGet.popHttpGet(tbHttp.TBShopSearchCrawer.__name__)
+def do_http(clasName=None):
+    http = BaseHttpGet.popHttpGet(clasName)
     if http is None:
         return
     if http.run():
@@ -78,24 +34,96 @@ def do_http(i=None):
         pass
 
 
-def do_update_shop_create_time():
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 开始----")
-    count = BaseHttpGet.getHttpGetPoolCount(tbHttp.TBShopCreateTimeCrawer())
-    if count>0:
-        print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 还有部分数据未处理完",count)
-        return
-    list = models.TTbShop.objects.filter(shop_createtime=None)[0:5000]
-
-    for shop in list:
-        http = tbHttp.TBShopCreateTimeCrawer()
-        http.shopid = shop.shopid
-        BaseHttpGet.pushHttpGet(http)
+#@sched.scheduled_job('interval',id="shop_search_job", seconds=60)
+def shop_search_job():
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"shop_search_job 开始----")
+    job = sched.get_job(job_id="shop_search_job")
+    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
+    clasName = tbHttp.TBShopSearchCrawer.__name__
+    count = BaseHttpGet.getHttpGetPoolCount(clasName)
+    # 如果队列中的元素为空，则加入一批到队列中
+    if count == 0:
+        cityl = chinaCity.listAllCity()
+        cat = tbcategory.getFristQueryKey()
+        for city in cityl:
+            tshop = tbHttp.TBShopSearchCrawer()
+            tshop.pageno = 1
+            tshop.q = cat
+            tshop.city = city
+            #tshop.id = "shop_search," + cat + city
+            BaseHttpGet.pushHttpGet(tshop)
+    #开启40个线程进行处理
+    tpool = MyThreadPool.MyThreadPool(40)
+    for i in range(10000):
+        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        if next - now < 3:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i , "shop_search_job 结束--------------------------------------------------------")
+            return
+        tpool.callInThread(do_http,clasName)
     pass
-    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 结束----")
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "shop_search_job 提前结束----")
+
+
+@sched.scheduled_job('interval',id="prod_search_job", seconds=60)
+def prod_search_job():
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"prod_search_job 开始----")
+    job = sched.get_job(job_id="prod_search_job")
+    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
+    clasName = tbHttp.TBProdSearchCrawer.__name__
+    count = BaseHttpGet.getHttpGetPoolCount(clasName)
+    # 如果队列中的元素为空，则加入一批到队列中
+    if count < 10:
+        cityl = chinaCity.listAllCity()
+        cat = tbcategory.getFristQueryKey()
+        for city in cityl:
+            prod = tbHttp.TBProdSearchCrawer()
+            prod.pageno = 1
+            prod.q = cat
+            prod.city = city
+            BaseHttpGet.pushHttpGet(prod)
+    #开启40个线程进行处理
+    tpool = MyThreadPool.MyThreadPool(40)
+    for i in range(10000):
+        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        if next - now < 3:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i , "prod_search_job 结束--------------------------------------------------------")
+            return
+        tpool.callInThread(do_http,clasName)
+    pass
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "prod_search_job 提前结束----")
+
+
+#@sched.scheduled_job('interval',id="update_shop_create_time_job", seconds=60)
+def update_shop_create_time_job():
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 开始----")
+    job = sched.get_job(job_id="update_shop_create_time_job")
+    next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
+    clasName = tbHttp.TBShopCreateTimeCrawer.__name__
+    count = BaseHttpGet.getHttpGetPoolCount(clasName)
+
+    #如果队列中的元素为空，则加入一批到队列中
+    if count==0:
+        list = models.TTbShop.objects.filter(shop_createtime=None)[0:5000]
+        for shop in list:
+            http = tbHttp.TBShopCreateTimeCrawer()
+            http.shopid = shop.shopid
+            http.isProxy = True
+            BaseHttpGet.pushHttpGet(http)
+        pass
+    #开启线程进行处理
+    tpool = MyThreadPool.MyThreadPool(5)
+    for i in range(10000):
+        now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        if next - now < 10:
+            print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), i,
+                  "update_shop_create_time_job 结束--------------------------------------------------------")
+            return
+        tpool.callInThread(do_http,clasName)
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "do_update_shop_create_time 提前结束----")
+    pass
+
 
 if __name__ == '__main__':
-    #init_shop_search()
-    #do_http()
+    print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "sched.start()")
     sched.start()
-    #do_http()
     pass
