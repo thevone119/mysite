@@ -11,7 +11,12 @@
 """
 import os
 import time
+import threading
 from mysite.libs import MyThreadPool
+
+# 全局锁
+L_THREAD = threading.Lock()
+
 class file_int(object):
     file_path = None #文件存放的路径
     create = True #是否自动创建
@@ -88,51 +93,90 @@ class file_int(object):
         ib = int.from_bytes(b, byteorder='big', signed=False)
         return bytes([ib & h])
 
-    #把int存入
-    def put_int(self,intv=0,flush=False,close=False):
+    #重新初始化文件句柄
+    def __re_init_file(self):
+        L_THREAD.acquire()
         if self.file_hand is None:
             self.file_hand = open(self.file_path, "r+b")
-        yFile = self.file_hand
-        seek = int(intv/8)
-        step = intv-seek*8+1
-        yFile.seek(seek,os.SEEK_SET)
-        rb = yFile.read(1)
-        yFile.seek(seek,os.SEEK_SET)
-        nb = self.__add_byte_h(rb,step)
-        yFile.write(nb)
-        if flush:
-            yFile.flush()
-        if close:
-            self.close()
+        L_THREAD.release()
+
+    #把int存入
+    def put_int(self,intv=0,flush=False,close=False):
+        self.__re_init_file()
+        if intv is None:
+            return
+        if intv<0:
+            return
+        L_THREAD.acquire()
+        try:
+            seek = int(intv/8)
+            step = intv-seek*8+1
+            self.file_hand.seek(seek,os.SEEK_SET)
+            rb = self.file_hand.read(1)
+            self.file_hand.seek(seek,os.SEEK_SET)
+            nb = self.__add_byte_h(rb,step)
+            self.file_hand.write(nb)
+            if flush:
+                self.file_hand.flush()
+            if close:
+                self.close()
+        except Exception as e:
+            print("put_int 错误",e)
+            raise e
+            pass
+        finally:
+            pass
+            L_THREAD.release()
         pass
 
     # 把int删除
     def del_int(self, intv=0,flush=False,close=False):
-        if self.file_hand is None:
-            self.file_hand = open(self.file_path, "r+b")
-        yFile = self.file_hand
-        seek = int(intv/8)
-        step = intv-seek*8+1
-        yFile.seek(seek,os.SEEK_SET)
-        rb = yFile.read(1)
-        yFile.seek(seek,os.SEEK_SET)
-        nb = self.__del_byte_h(rb,step)
-        yFile.write(nb)
-        if flush:
-            yFile.flush()
-        if close:
-            self.close()
+        self.__re_init_file()
+        if intv is None:
+            return
+        if intv<0:
+            return
+        L_THREAD.acquire()
+        try:
+            seek = int(intv / 8)
+            step = intv - seek * 8 + 1
+            self.file_hand.seek(seek, os.SEEK_SET)
+            rb = self.file_hand.read(1)
+            self.file_hand.seek(seek, os.SEEK_SET)
+            nb = self.__del_byte_h(rb, step)
+            self.file_hand.write(nb)
+            if flush:
+                self.file_hand.flush()
+            if close:
+                self.close()
+        except Exception as e:
+            print("del_int 错误", e)
+            raise e
+            pass
+        finally:
+            L_THREAD.release()
 
     #判断是否存在int
     def has_int(self,intv):
-        if self.file_hand is None:
-            self.file_hand = open(self.file_path, "r+b")
-        seek = int(intv / 8)
-        step = intv-seek*8+1
-        self.file_hand.seek(seek,os.SEEK_SET)
-        rb = self.file_hand.read(1)
-        return self.__has_byte_h(rb,step)
-        pass
+        self.__re_init_file()
+        if intv is None:
+            return
+        if intv<0:
+            return
+        L_THREAD.acquire()
+        try:
+            seek = int(intv / 8)
+            step = intv-seek*8+1
+            self.file_hand.seek(seek,os.SEEK_SET)
+            rb = self.file_hand.read(1)
+            return self.__has_byte_h(rb,step)
+            pass
+        except Exception as e:
+            print("has_int 错误", e)
+            raise e
+            pass
+        finally:
+            L_THREAD.release()
 
     def close(self):
         if self.file_hand is None:
@@ -142,12 +186,19 @@ class file_int(object):
 
 
 
+
 if __name__ == '__main__':
-    currtime = time.time()
     fi = file_int("/test/test3/test2")
+    currtime = time.time()
+    t = MyThreadPool.MyThreadPool(10)
     for i in range(10000):
-        pass
-        fi.put_int(i)
         #t.callInThread(test,i)
-    fi.close()
+        pass
+    print("错误--")
+    for i in  range(10000):
+        if fi.has_int(i):
+            #print("正确",i)
+            pass
+        else:
+            print("错误")
     print(time.time()-currtime)
