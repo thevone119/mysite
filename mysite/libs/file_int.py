@@ -21,9 +21,12 @@ class file_int(object):
     file_path = None #文件存放的路径
     create = True #是否自动创建
     file_hand = None
-    def __init__(self,file_path=None,create=True):  # 调用时需传入self相当于this
+    maxint = 1024*1024*1024*8 #最大一个G,不能超过这个
+    def __init__(self,file_path=None,create=True,maxint=None):  # 调用时需传入self相当于this
         if file_path is None:
             raise Exception("file_path is None")
+        if maxint is not None:
+            self.maxint=maxint
         self.file_path = file_path
         self.create = create
         if create:
@@ -97,9 +100,15 @@ class file_int(object):
     def __re_init_file(self):
         global L_THREAD
         L_THREAD.acquire()
-        if self.file_hand is None:
-            self.file_hand = open(self.file_path, "r+b")
-        L_THREAD.release()
+        try:
+            if self.file_hand is None:
+                self.file_hand = open(self.file_path, "r+b")
+        except Exception as e:
+            raise e
+            pass
+        finally:
+            pass
+            L_THREAD.release()
 
     #把int存入
     def put_int(self,intv=0,flush=False,close=False):
@@ -108,7 +117,11 @@ class file_int(object):
         if intv is None:
             return
         if intv<0:
-            return
+            raise Exception("intv is <0 ")
+
+        if intv>self.maxint:
+            raise Exception("intv is too large max:"+str(self.maxint))
+
         L_THREAD.acquire()
         try:
             seek = int(intv/8)
@@ -137,8 +150,11 @@ class file_int(object):
         self.__re_init_file()
         if intv is None:
             return
-        if intv<0:
-            return
+        if intv < 0:
+            raise Exception("intv is <0 ")
+
+        if intv > self.maxint:
+            raise Exception("intv is too large max:" + str(self.maxint))
         L_THREAD.acquire()
         try:
             seek = int(intv / 8)
@@ -165,8 +181,12 @@ class file_int(object):
         self.__re_init_file()
         if intv is None:
             return
-        if intv<0:
-            return
+        if intv < 0:
+            raise Exception("intv is <0 ")
+
+        if intv > self.maxint:
+            raise Exception("intv is too large max:" + str(self.maxint))
+
         L_THREAD.acquire()
         try:
             seek = int(intv / 8)
@@ -186,6 +206,8 @@ class file_int(object):
         if self.file_hand is None:
             self.file_hand.close()
             self.file_hand = None
+
+
 
 
 
