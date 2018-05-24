@@ -7,14 +7,15 @@
 3.基于文件指针，判断，插入，删除，查找都可以毫秒级返回
 4.只能存入非负数(0-N)，负数自行转换处理
 5.第一位是(0-7)，以此类推
+6.由于是文件操作，不允许多线程并发。可以多线程读取判断，但是写入不要多线程进行写入，否则会出现覆盖的情况
 """
 import os
-
-
+import time
+from mysite.libs import MyThreadPool
 class file_int(object):
     file_path = None #文件存放的路径
     create = True #是否自动创建
-
+    file_hand = None
     def __init__(self,file_path=None,create=True):  # 调用时需传入self相当于this
         if file_path is None:
             raise Exception("file_path is None")
@@ -88,30 +89,65 @@ class file_int(object):
         return bytes([ib & h])
 
     #把int存入
-    def put_int(self,intv):
-        yFile = open(self.file_path, "r+b")
+    def put_int(self,intv=0,flush=False,close=False):
+        if self.file_hand is None:
+            self.file_hand = open(self.file_path, "r+b")
+        yFile = self.file_hand
         seek = int(intv/8)
-        step = intv%8+1
-        yFile.seek(seek)
+        step = intv-seek*8+1
+        yFile.seek(seek,os.SEEK_SET)
         rb = yFile.read(1)
+        yFile.seek(seek,os.SEEK_SET)
         nb = self.__add_byte_h(rb,step)
         yFile.write(nb)
-        yFile.close()
+        if flush:
+            yFile.flush()
+        if close:
+            self.close()
         pass
+
+    # 把int删除
+    def del_int(self, intv=0,flush=False,close=False):
+        if self.file_hand is None:
+            self.file_hand = open(self.file_path, "r+b")
+        yFile = self.file_hand
+        seek = int(intv/8)
+        step = intv-seek*8+1
+        yFile.seek(seek,os.SEEK_SET)
+        rb = yFile.read(1)
+        yFile.seek(seek,os.SEEK_SET)
+        nb = self.__del_byte_h(rb,step)
+        yFile.write(nb)
+        if flush:
+            yFile.flush()
+        if close:
+            self.close()
 
     #判断是否存在int
     def has_int(self,intv):
-        yFile = open(self.file_path, "rb")
+        if self.file_hand is None:
+            self.file_hand = open(self.file_path, "r+b")
         seek = int(intv / 8)
-        step = intv % 8 + 1
-        yFile.seek(seek)
-        rb = yFile.read(1)
-        yFile.close()
+        step = intv-seek*8+1
+        self.file_hand.seek(seek,os.SEEK_SET)
+        rb = self.file_hand.read(1)
         return self.__has_byte_h(rb,step)
         pass
 
+    def close(self):
+        if self.file_hand is None:
+            self.file_hand.close()
+            self.file_hand = None
+
+
+
 
 if __name__ == '__main__':
-    fi = file_int("d:/test/test3/test")
-    fi.put_int(2)
-    print(fi.has_int(2))
+    currtime = time.time()
+    fi = file_int("/test/test3/test2")
+    for i in range(10000):
+        pass
+        fi.put_int(i)
+        #t.callInThread(test,i)
+    fi.close()
+    print(time.time()-currtime)
