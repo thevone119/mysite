@@ -21,7 +21,7 @@ class file_int(object):
     file_path = None #文件存放的路径
     create = True #是否自动创建
     file_hand = None
-    maxint = 1024*1024*1024*8 #最大一个G,不能超过这个
+    maxint = 1024*1024*1024*8 #默认最大一个G,不能超过这个
     def __init__(self,file_path=None,create=True,maxint=None):  # 调用时需传入self相当于this
         if file_path is None:
             raise Exception("file_path is None")
