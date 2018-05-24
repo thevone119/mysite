@@ -240,13 +240,17 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
                 product_id = self.paseInt(product_id)
                 if product_id is None:
                     continue
+
+                view_sales = stringExt.StringExt(item["view_sales"]).ExtStr("", "人").int()
+                if view_sales is not None:
+                    if view_sales==0:
+                        continue
                 #如果在缓存中存在，则直接跳过
                 if tbpool.prodIdExist(product_id):
                     continue
                 #查找数据库中是否存在，如果存在，则直接跳过，如果不存在，则新建一个,避免了把旧的数据替换掉的问题
                 prod = models.TTbShopProd.objects.filter(product_id=product_id).first()
                 if prod is None:
-                    sesscount = sesscount + 1
                     prod = models.TTbShopProd()
                     prod.product_id = product_id
                 else:
@@ -254,8 +258,12 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
                 prod.loc = item["item_loc"]
                 prod.name = item["raw_title"]
                 prod.uid = item["user_id"]
+                prod.view_sales = view_sales
+
                 prod.shop_price = self.paseInt(item["view_price"] *100)
                 prod.save()
+                sesscount = sesscount + 1
+
             pass
             # 如果整页都没有一条新的的，则直接跳过10页
             if sesscount == 0:
