@@ -41,19 +41,11 @@ def shop_search_job():
     next = int(job.next_run_time.strftime('%Y%m%d%H%M%S'))
     clasName = tbHttp.TBShopSearchCrawer.__name__
     count = BaseHttpGet.getHttpGetPoolCount(clasName)
-    # 如果队列中的元素为空，则加入一批到队列中
+    # 如果队列中的元素为空，则加入一批到队列中(放在提前结束的逻辑去)
     if count == 0:
-        cityl = chinaCity.listAllCity()
-        cat = tbcategory.getFristQueryKey()
-        for city in cityl:
-            tshop = tbHttp.TBShopSearchCrawer()
-            tshop.pageno = 1
-            tshop.q = cat
-            tshop.city = city
-            #tshop.id = "shop_search," + cat + city
-            BaseHttpGet.pushHttpGet(tshop)
+        pass
     #开启40个线程进行处理
-    tpool = MyThreadPool.MyThreadPool(40)
+    tpool = MyThreadPool.MyThreadPool(20)
     for i in range(10000):
         now = int(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         if next - now < 3:
@@ -61,6 +53,16 @@ def shop_search_job():
             return
         tpool.callInThread(do_http,clasName)
     pass
+    #如果要提前结束，则加入一批待处理
+    cityl = chinaCity.listAllCity()
+    cat = tbcategory.getFristQueryKey()
+    for city in cityl:
+        tshop = tbHttp.TBShopSearchCrawer()
+        tshop.pageno = 1
+        tshop.q = cat
+        tshop.city = city
+        # tshop.id = "shop_search," + cat + city
+        BaseHttpGet.pushHttpGet(tshop)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "shop_search_job 提前结束----")
 
 
@@ -73,14 +75,7 @@ def prod_search_job():
     count = BaseHttpGet.getHttpGetPoolCount(clasName)
     # 如果队列中的元素为空，则加入一批到队列中
     if count < 10:
-        cityl = chinaCity.listAllCity()
-        cat = tbcategory.getFristQueryKey()
-        for city in cityl:
-            prod = tbHttp.TBProdSearchCrawer()
-            prod.pageno = 1
-            prod.q = cat
-            prod.city = city
-            BaseHttpGet.pushHttpGet(prod)
+        pass
     #开启40个线程进行处理
     tpool = MyThreadPool.MyThreadPool(40)
     for i in range(10000):
@@ -90,6 +85,21 @@ def prod_search_job():
             return
         tpool.callInThread(do_http,clasName)
     pass
+    #如果要提前结束，则放入一批新的查询
+
+    cityl = chinaCity.listAllCity()
+    cat = tbcategory.getFristQueryKey()
+    #先放入一个没有城市划分的
+    prod = tbHttp.TBProdSearchCrawer()
+    prod.pageno = 1
+    prod.q = cat
+    BaseHttpGet.pushHttpGet(prod)
+    for city in cityl:
+        prod = tbHttp.TBProdSearchCrawer()
+        prod.pageno = 1
+        prod.q = cat
+        prod.city = city
+        BaseHttpGet.pushHttpGet(prod)
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())), "prod_search_job 提前结束----")
 
 
