@@ -49,7 +49,7 @@ def getCurrIp():
         url = "https://ip.cn/"
         r = requests.get(url, headers=headers)
         r.encoding = 'utf-8'
-        ip = stringExt.ExtStr(r.text, "IP：<code>", "</code>")
+        ip = stringExt.StringExt(r.text).ExtStr( "IP：<code>", "</code>").str()
         if len(ip) > 5 and len(ip) < 20:
             currip = ip
             last_updata_ip = time.time()
