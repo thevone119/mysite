@@ -80,6 +80,7 @@ class TTbShopProd(models.Model):
     status = models.IntegerField(blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
     sale_num = models.IntegerField(blank=True, null=True)
+    view_sales = models.IntegerField(blank=True, null=True)
     rate_num = models.IntegerField(blank=True, null=True)
     shop_price = models.IntegerField(blank=True, null=True)
     standard_price = models.IntegerField(blank=True, null=True)
@@ -87,7 +88,7 @@ class TTbShopProd(models.Model):
     update_time = models.CharField(db_column='update_Time', max_length=14, blank=True, null=True)  # Field name made lowercase.
     create_time = models.CharField(db_column='create_Time', max_length=14, blank=True, null=True)  # Field name made lowercase.
     uid = models.BigIntegerField(db_column='UID', blank=True, null=True)  # Field name made lowercase.
-    loc = models.CharField(max_length=20, blank=True, null=True)
+    prod_loc = models.CharField(max_length=20, blank=True, null=True)
 
 
 

@@ -12,7 +12,6 @@ import json
 import urllib
 
 from mysite.libs import BaseHttpGet
-from mysite.libs import file_int
 
 # 所有淘宝的httpget请求处理定义在这里
 
@@ -240,10 +239,10 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
                 product_id = self.paseInt(product_id)
                 if product_id is None:
                     continue
-
-                view_sales = stringExt.StringExt(item["view_sales"]).ExtStr("", "人").int()
-                if view_sales is not None:
-                    if view_sales==0:
+                view_sales =0
+                if "view_sales" in item:
+                    view_sales = stringExt.StringExt(item["view_sales"]).ExtStr("", "人").int()
+                if view_sales==0:
                         continue
                 #如果在缓存中存在，则直接跳过
                 if tbpool.prodIdExist(product_id):
@@ -255,19 +254,20 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
                     prod.product_id = product_id
                 else:
                     continue
-                prod.loc = item["item_loc"]
+                prod.prod_loc = item["item_loc"]
                 prod.name = item["raw_title"]
                 prod.uid = item["user_id"]
                 prod.view_sales = view_sales
-
+                prod.create_time = time.strftime("%Y%m%d", time.localtime(time.time()))
+                prod.update_time = time.strftime("%Y%m%d", time.localtime(time.time()))
                 prod.shop_price = self.paseInt(item["view_price"] *100)
                 prod.save()
                 sesscount = sesscount + 1
 
             pass
-            # 如果整页都没有一条新的的，则直接跳过10页
+            # 如果整页都没有一条新的的，则直接结束
             if sesscount == 0:
-                self.pageno = self.pageno+10
+                self.pageno = self.pageno+100
             # 每20条输出一条
             if CRA_COUNT % 50 == 0:
                 print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
@@ -391,8 +391,7 @@ class TBUserRateCrawer(BaseHttpGet.BaseHttpGet):
         tbpool.pushISG(isg)
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3',
-            'cookie': 'thw=cn; miid=1714981155805935700; l=AuLiW6Rw6YNZPxWqb9bnun/GsmZEIeZN; x=e%3D1%26p%3D*%26s%3D0%26c%3D0%26f%3D0%26g%3D0%26t%3D0%26__ll%3D-1%26_ato%3D0; cna=OCTpEf5FVnICAbcSF1gbeE0t; enc=RuTtWZsEqNoVCw9IiMgDmkTxqomSox1fA3oNqqL3FbJduKivwZ4t4dgyoVikI5PdZxbNF4IlNapOCWJeQ4eA6w%3D%3D; _cc_=Vq8l%2BKCLiw%3D%3D; tg=4; __guid=98467100.3035049717173234700.1526318952720.6155; UM_distinctid=16381b67eaaa4-0f4c5b9b527742-6b1b1279-1fa400-16381b67eab3d1; t=bff7b50a0ccb05c2971af4a6d23790de; cookie2=4c61466f8ac6a279657d99cbbe18dba5; _m_h5_tk=9fff7c177859177a1c5a1580e2282feb_1527053309996; _m_h5_tk_enc=2bcf7a113c1939598fc9d9f84d913e8a; ali_ab=119.135.76.7.1527050969284.8; _tb_token_=33fe57e37d43e; hng=CN%7Czh-CN%7CCNY%7C156; mt=ci=0_0; v=0; monitor_count=8; isg=BJaWZzr00WT0fue32R0slRmY50xYn9sZ9enpFAD_uHkUwzZdaMcqgfy7X18v69KJ',
-            'referer':'https://ss163.taobao.com/shop/view_shop.htm?spm=a219r.lm874.14.8.5fec6dbc0luSwy&user_number_id=42314291',
+
         }
         return True
 
@@ -445,6 +444,47 @@ class TBUserRateCrawer(BaseHttpGet.BaseHttpGet):
             print("TBUserRateCrawer数据解析出错:", e)
             return False
         return True
+#淘宝的商品主页
+class TBProdItemCrawer(BaseHttpGet.BaseHttpGet):
+    product_id = None
+    isProxy = False
+    encoding = 'utf-8'
+    # 执行数据爬取前先设置headers
+    def before(self):
+        global CRA_COUNT
+        L_CAT.acquire()
+        CRA_COUNT = CRA_COUNT + 1
+        L_CAT.release()
+        cookie = tbpool.popNoLoginCookie()
+        tbpool.pushNoLoginCookie(cookie)
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3',
+            'cookie': cookie,
+        }
+        self.url = "https://item.taobao.com/item.htm?id="+self.product_id
+        return True
+
+    def parse(self, response):
+        try:
+            html = response.text
+            if html.find("microscope-data")<1:
+                print("淘宝的商品主页数据抓取失败1", html)
+                return False
+            if html.find("您查看的宝贝不存在")>1:
+                print("淘宝的商品主页数据抓取失败2", html)
+                return False
+            st = stringExt.StringExt(html)
+            shopid =  st.extractLine("microscope-data","meta").ExtStr("shopId=",";").int()
+            if shopid is None:
+                print("淘宝的商品主页数据抓取失败3", html)
+                return False
+            models.TTbShopProd.objects.filter(product_id=self.product_id).update(shopid=shopid)
+
+            print("淘宝的商品主页数据抓取成功", self.product_id)
+        except Exception as e:
+            print("TBUserRateCrawer数据解析出错:", e)
+            return False
+        return True
 
 # 测试类
 class TestHttpGet(BaseHttpGet.BaseHttpGet):
@@ -460,12 +500,15 @@ class TestHttpGet(BaseHttpGet.BaseHttpGet):
 
 if __name__ == '__main__':
 
-    test = TBUserRateCrawer()
-    test.shopid = 33757521
-    test.url = "https://rate.taobao.com/user-rate-UMmIGvFQyOFHT.htm?spm=a1z10.1-c-s.0.0.20c375c0IN5YFU"
-    test.run()
+    test = TBProdSearchCrawer()
+    test.q="美食"
+    test.city="广州"
+    #test.url = "https://rate.taobao.com/user-rate-UMmIGvFQyOFHT.htm?spm=a1z10.1-c-s.0.0.20c375c0IN5YFU"
+    #test.run()
+    item={"a":123}
 
-
+    print("view_sales" in item)
+    stringExt.StringExt(item["view_sales"]).ExtStr("", "人").int()
     #test.run()
 
     pass
