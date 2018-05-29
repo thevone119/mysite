@@ -4,6 +4,7 @@ import threading
 import time
 from mysite.libs import myredis
 from mysite.libs import stringExt
+from mysite.libs import chinaCity
 from mysite.app.taobao import models
 from mysite.app.taobao import tbpool
 from mysite.app.taobao import tbcategory
@@ -51,13 +52,17 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
         return True
 
     def nextQuery(self):
-        n_q = tbcategory.getNextQueryKey(self.q)
-        if n_q is not None:
-            self.q = n_q
+        ncity = chinaCity.getNextCity(self.city)
+        if ncity is not None:
+            self.city = ncity
             self.id = None  # id必须设置为空，否则无放入到运行队列里
             self.pageno = 1
             BaseHttpGet.pushHttpGet(self)
-        return
+
+        # 如果结束了。则把查询的key放入缓存，同一个查询key，3天内部重复查询
+        tbpool.ShopQuerykeyExist(self.q)
+
+
 
     # 这个方法由子类实现，爬虫爬取完成后，会调用此方法
     # 如果这个返回True，则代表调用成功，移除出调用列表
@@ -117,7 +122,7 @@ class TBShopSearchCrawer(BaseHttpGet.BaseHttpGet):
                 self.pageno = self.pageno+10
             # 每20条输出一条
             if CRA_COUNT % 50 == 0:
-                print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
+                print("数据抓取结束", self.city, self.q, self.pageno, sesscount)
             # 执行完，把一下页放入待执行列表,如果超过100页，则把下一个关键字放入
             if self.pageno < 100:
                 self.pageno = self.pageno + 1
@@ -200,12 +205,14 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
         return True
 
     def nextQuery(self):
-        n_q = tbcategory.getNextQueryKey(self.q)
-        if n_q is not None:
-            self.q = n_q
+        n_c = chinaCity.getNextCity(self.city)
+        if n_c is not None:
+            self.city = n_c
             self.id = None  # id必须设置为空，否则无放入到运行队列里
             self.pageno = 1
             BaseHttpGet.pushHttpGet(self)
+        #如果结束了，则把查询关键字放入缓存
+        tbpool.ProdQuerykeyExist(self.q)
         return
 
     # 这个方法由子类实现，爬虫爬取完成后，会调用此方法
@@ -265,12 +272,12 @@ class TBProdSearchCrawer(BaseHttpGet.BaseHttpGet):
                 sesscount = sesscount + 1
 
             pass
-            # 如果整页都没有一条新的的，则直接结束
+            # 如果整页都没有一条新的的，则加100页
             if sesscount == 0:
                 self.pageno = self.pageno+100
             # 每20条输出一条
             if CRA_COUNT % 50 == 0:
-                print("数据抓取结束", self.city, self.q, self.pageno, CRA_COUNT, itemcount)
+                print("数据抓取结束", self.city, self.q, self.pageno, sesscount)
             # 执行完，把一下页放入待执行列表,如果超过100页，则把下一个关键字放入
             if self.pageno < 100:
                 self.pageno = self.pageno + 1
@@ -439,7 +446,8 @@ class TBUserRateCrawer(BaseHttpGet.BaseHttpGet):
                 shop.delivery_score = deliveryScore
             shop.save()
 
-            print("获取淘宝卖家主页数据成功", self.shopid)
+            if CRA_COUNT % 10 == 0:
+                print("获取淘宝卖家主页数据成功", self.shopid)
         except Exception as e:
             print("TBUserRateCrawer数据解析出错:", e)
             return False
@@ -447,8 +455,9 @@ class TBUserRateCrawer(BaseHttpGet.BaseHttpGet):
 #淘宝的商品主页
 class TBProdItemCrawer(BaseHttpGet.BaseHttpGet):
     product_id = None
-    isProxy = False
-    encoding = 'utf-8'
+    uid=None
+    isProxy = True
+    encoding = 'GBK'
     # 执行数据爬取前先设置headers
     def before(self):
         global CRA_COUNT
@@ -461,24 +470,27 @@ class TBProdItemCrawer(BaseHttpGet.BaseHttpGet):
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.3',
             'cookie': cookie,
         }
-        self.url = "https://item.taobao.com/item.htm?id="+self.product_id
+        self.url = "https://item.taobao.com/item.htm?id="+str(self.product_id)
+        self.isProxy=True
         return True
 
     def parse(self, response):
         try:
             html = response.text
             if html.find("microscope-data")<1:
-                print("淘宝的商品主页数据抓取失败1", html)
+                print("淘宝的商品主页数据抓取失败1")
+                time.sleep(2)
                 return False
             if html.find("您查看的宝贝不存在")>1:
-                print("淘宝的商品主页数据抓取失败2", html)
+                print("淘宝的商品主页数据抓取失败2")
                 return False
             st = stringExt.StringExt(html)
             shopid =  st.extractLine("microscope-data","meta").ExtStr("shopId=",";").int()
             if shopid is None:
-                print("淘宝的商品主页数据抓取失败3", html)
+                print("淘宝的商品主页数据抓取失败3")
+                models.TTbShopProd.objects.filter(product_id=self.product_id).update(shopid=-1)
                 return False
-            models.TTbShopProd.objects.filter(product_id=self.product_id).update(shopid=shopid)
+            models.TTbShopProd.objects.filter(uid=self.uid).update(shopid=shopid)
 
             print("淘宝的商品主页数据抓取成功", self.product_id)
         except Exception as e:

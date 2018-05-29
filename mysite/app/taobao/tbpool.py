@@ -12,6 +12,8 @@ TB_POOL_PROD_ID = "TB:PROD_ID"  # 淘宝的商品ID，如果不在523839458288  
 TB_POOL_SHOP_ID = "TB:SHOP_ID"  # 淘宝的商品ID，如果不在523839458288  570519703363
 TB_NO_LIGIN_COOKIE = "TB:NO_LIGIN_COOKIE"  # 淘宝的cookie存放在这里,先进先出队列,用线程抓取一批cookie到这里存储，做备用
 
+TB_POOL_PROD_QUERY_KEY = "TB:PROD_QUERY_KEY"  # 淘宝商品的查询字
+TB_POOL_SHOP_QUERY_KEY = "TB:SHOP_QUERY_KEY"  # 淘宝店铺的查询字
 
 #定义2个文件,存放淘宝的商店ID和产品ID.避免数据的重复抓取
 F_SHOP_ID = file_int.file_int("/temp/tb_shopid.intf")
@@ -46,7 +48,19 @@ def popNoLoginCookie():
     cookie = cookie.decode()
     return cookie
 
+def ShopQuerykeyExist(q=None):
+    if myredis.hexists(TB_POOL_SHOP_QUERY_KEY,q):
+        return True
+    else:
+        myredis.hset(TB_POOL_SHOP_QUERY_KEY,q,None)
+        return False
 
+def ProdQuerykeyExist(q=None):
+    if myredis.hexists(TB_POOL_PROD_QUERY_KEY,q):
+        return True
+    else:
+        myredis.hset(TB_POOL_PROD_QUERY_KEY,q,None)
+        return False
 
 # 判断shopid是否存在，
 # 如果存在，则返回True

@@ -105,7 +105,7 @@ class BaseHttpGet(object):
                 self.headers["HTTP_X_FORWARDED_FOR"] = self._randomIp()
                 self.headers["HTTP_CF_CONNECTING_IP"] = self._randomIp()
                 requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
-                r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False)
+                r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False,timeout=6)
                 r.encoding = self.encoding
                 ipm.check_time = int(time.time())
                 ipm.last_use_time = int(time.time())
@@ -131,7 +131,7 @@ class BaseHttpGet(object):
                 #http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
                 s = getSessionPool()
 
-                r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False)
+                r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False,timeout=5)
                 r.encoding = self.encoding
                 return self.parse(r)
             except Exception as e:

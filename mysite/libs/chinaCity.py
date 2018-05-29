@@ -36,7 +36,7 @@ ALL_CH_CITY = ['北京', '天津', '沈阳', '长春', '哈尔滨', '上海', '�
 # 查询所有的城市列表，把所有的城市汇总，去重后返回一个列表
 def listAllCity():
     dict = {'a': 1}  ## 空字典
-    list = []  ## 空列表
+    list = [""]  ## 空列表
     for v in CH_PROV:
         dict[v] = 1
         list.append(v)
@@ -94,5 +94,5 @@ def getNextCity(city=None):
 
 if __name__ == '__main__':
     list = listAllCity()
-    print(getNextCity("湛江"))
+    print(getNextCity(""))
 
