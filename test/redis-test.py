@@ -10,7 +10,8 @@ ret = r.get("name")
 print(ret.decode())
 print(int(r.get("incrby")))
 print(r.llen("HTTPGET:POOL"))
-r.delete("HTTPGET:POOL")
+print(r.hlen("TB:PROD_ID"))
+#r.delete("TB:PROD_ID")
 
 kquery = r.keys("HTTPGET*")
 for k in kquery:
