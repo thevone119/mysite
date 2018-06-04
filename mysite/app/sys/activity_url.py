@@ -16,17 +16,22 @@ def activity_url_process(request, **kwargs):
     pars = request.path.split("/")
     if len(pars)<3:
         return HttpResponse('404 Not Found')
-    appname = pars[2]
-    funcname = pars[3]
+    appname = pars[2] #app名称
+    funcname = pars[3] #func名称
+    ortherpars = [] #所有的参数都放在这里
+    if len(pars)>3:
+        ortherpars = pars[4:]
+        for p in ortherpars:
+            print("p:", p)
+
     print("appname:",appname,"funcname",funcname)
-
     try:
-        appObj = __import__("mysite.app."+appname+".views")
-        viewObj = getattr(appObj, 'views')
-        funcObj = getattr(viewObj, funcname)
-
-        # 执行view.py中的函数，并获取其返回值
-        result = funcObj(request, kwargs)
+        #1.先导入模块（views）
+        moduleObj = __import__("mysite.app."+appname+".views",fromlist=True) #如果不加上fromlist=True,只会导入第一级
+        #2.获取函数方法
+        funcObj = getattr(moduleObj, funcname)
+        # 执行views.py中的函数，并获取其返回值
+        result = funcObj(request, *ortherpars)
 
     except ImportError:
         # 导入失败时，自定义404错误
