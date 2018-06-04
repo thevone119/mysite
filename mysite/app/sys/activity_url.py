@@ -6,6 +6,7 @@
 例如：http://127.0.0.1:8000/app/ipproxy/hello/p1/p2/p3/
 2.前3级是app,app名称，views下的函数名称。
 3.后面更多的则是各种参数,按顺序传入。
+4.后续增加拦截器的实现，考虑要实现比较方便。最好参考注解方法的方式实现比较好。
 '''
 
 from django.shortcuts import render_to_response,HttpResponse,redirect
@@ -40,5 +41,5 @@ def activity_url_process(request, **kwargs):
     except Exception as e:
         # 代码执行异常时，自动跳转到指定页面
         #return redirect('/app01/index/')
-        return HttpResponse('503 Not Found')
+        return HttpResponse('503 Exception')
     return result
