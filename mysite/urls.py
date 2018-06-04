@@ -15,7 +15,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls import include, url
+from mysite.app.ipproxy import views
+from mysite.app.sys import activity_url
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    url(r'^app/', activity_url.activity_url_process),
 ]
+
+
+#只有debug模式才进入admin
+if settings.DEBUG:
+    urlpatterns += [
+        #url(r'^admin/', include(admin.site.urls)),
+    ]
+
+
