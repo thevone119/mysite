@@ -38,6 +38,7 @@ class xp1024_list_crawer(BaseHttpGet.BaseHttpGet):
                 # 判断影片是否已经存在，如果存在，则不在进行下一步处理
                 if mv is None:
                     mv = models.XP1024Movie()
+                    mv.pub_src="1024xp"
                 else:
                     continue
                 mv.pub_type = self.pub_type
@@ -85,11 +86,21 @@ class xp1024_info_crawer(BaseHttpGet.BaseHttpGet):
             html = response.content.decode("utf-8", 'replace')
             soup = BeautifulSoup(html, "lxml")
             div = soup.find("div", id="read_tpc")
-            divtext = div.text
-            cstart = divtext.find("【影片名称】")
-            cend = divtext.find("【影片截图】")
-            if (cend < 0):
-                cend = divtext.find("【图片预览】")
+            divtext = str(div)
+            #print(divtext)
+            cstart = divtext.find("read_tpc\">")
+
+            if(cstart<0):
+                cstart = divtext.find("名稱】")
+            else:
+                cstart=cstart+len("read_tpc\">")
+
+            cend = divtext.find("<img",cstart)
+            cend2 =  divtext.find("<a",cstart)
+            if cend2>0 and cend2<cend:
+                cend=cend2
+            if(cend>500):
+                cend=500
             if (cstart > 0 and cend > cstart):
                 self.mv.pub_content = divtext[cstart:cend]
             # 图片地址

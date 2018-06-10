@@ -63,6 +63,9 @@ def xp1024_search_job():
             break
         tpool.callInThread(do_http,  xp1024Http.xp1024_info_crawer.__name__)
     pass
+    tpool.wait()
+
+    #执行完数据采集，则执行数据生成，取5天的数据来做数据生成
 
 
 
