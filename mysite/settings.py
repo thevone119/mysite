@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mysite.app.taobao',
     'mysite.app.ipproxy',
+    'mysite.app.webxp',
 ]
 
 MIDDLEWARE = [

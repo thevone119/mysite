@@ -2,8 +2,8 @@
 import requests
 import time
 from mysite.app.ipproxy import ippool
-from mysite.app.ipproxy import models
 from mysite.libs import myredis
+from mysite.libs import MyThreadPool
 import pickle
 import http.client
 import json
@@ -131,8 +131,8 @@ class BaseHttpGet(object):
                 #http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
                 s = getSessionPool()
 
-                r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False,timeout=5)
-                r.encoding = self.encoding
+                r = s.get(self.url, headers=self.headers, allow_redirects=True, verify=False,timeout=10)
+                #r.encoding = self.encoding
                 return self.parse(r)
             except Exception as e:
                 print("BaseHttpGet run 错误",e)
@@ -182,6 +182,30 @@ def getHttpGetPoolCount(clsName=None):
     if c is None:
         return 0
     return int(c)
+
+
+#代理执行方法
+def __do_http(clasName=None):
+    http = BaseHttpGet.popHttpGet(clasName)
+    if http is None:
+
+        return
+    if http.run():
+        pass
+    else:
+        BaseHttpGet.pushHttpGet(http)
+        pass
+
+#启动多个线程在后台执行
+def HttpRun(clsName=None,maxthred=10):
+    pass
+    #还是放在外面跑吧，这里不好控制
+    # 开启40个线程进行处理
+    tpool = MyThreadPool.MyThreadPool(maxthred)
+    while True:
+        tpool.callInThread(__do_http, clsName)
+    pass
+
 
 # 测试类
 class TestHttpGet(BaseHttpGet):
