@@ -54,6 +54,8 @@ class xp1024_list_crawer(BaseHttpGet.BaseHttpGet):
                 # 抽取明细
                 info = xp1024_info_crawer()
                 info.mv=mv
+                #放入ID，避免重复
+                info.id=pub_id
                 BaseHttpGet.pushHttpGet(info)
 
 
@@ -150,7 +152,7 @@ def getRemoteFileSize(url):
     if url is None or len(url)<5:
         return 0
     try:
-        r=BaseHttpGet.getSessionPool().get(url, headers=headers)
+        r=BaseHttpGet.getSessionPool().get(url, headers=headers,timeout=10)
         return len(r.content)
     except Exception as e: # 远程文件不存在
         return 0
@@ -158,7 +160,7 @@ def getRemoteFileSize(url):
 
 #查询下载链接
 def query_xp_torrent(mv=None):
-    r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers)
+    r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers,timeout=10)
     html = r.content.decode("utf-8", 'replace')
     soup = BeautifulSoup(html, "lxml")
     links=soup.find_all("a")
