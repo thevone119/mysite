@@ -32,17 +32,17 @@ def do_http(clasName=None):
 #@sched.scheduled_job('interval',id="xp1024_search_job", seconds=60)
 def xp1024_search_job():
     print(time.strftime("%d %H:%M:%S", time.localtime(time.time())),"xp1024_search_job 开始----")
-    for i in range(1, 20):
+    for i in range(1, 10):
         http=xp1024Http.xp1024_list_crawer()
         http.url=xp_base_url+"/pw/thread.php?fid=5&page=" + str(i)
         http.pub_type="亚洲无码"
         BaseHttpGet.pushHttpGet(http)
-    for i in range(1, 20):
+    for i in range(1, 10):
         http=xp1024Http.xp1024_list_crawer()
         http.url=xp_base_url+"/pw/thread.php?fid=22&page=" + str(i)
         http.pub_type="日本骑兵"
         BaseHttpGet.pushHttpGet(http)
-    for i in range(1, 20):
+    for i in range(1, 10):
         http=xp1024Http.xp1024_list_crawer()
         http.url=xp_base_url+"/pw/thread.php?fid=7&page=" + str(i)
         http.pub_type="歐美新片"
@@ -51,7 +51,7 @@ def xp1024_search_job():
     #执行多线程处理
     # 开启5个线程进行处理
 
-    tpool = MyThreadPool.MyThreadPool(5)
+    tpool = MyThreadPool.MyThreadPool(2)
     for i in range(10000):
         if BaseHttpGet.getHttpGetPoolCount(xp1024Http.xp1024_list_crawer.__name__)==0:
             break

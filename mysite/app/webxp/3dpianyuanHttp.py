@@ -74,11 +74,17 @@ def query_pianyuan_info(mv=None):
     html = r.content.decode("gbk", 'replace')
     soup = BeautifulSoup(html, "lxml")
     hdiv = soup.find("div",class_="showhide")
-    if hdiv.text.find("magnet:")==-1:
+    sidx = hdiv.text.find("magnet:")
+    if sidx==-1:
+        sidx = hdiv.text.find("http://gdl.lixian.vip.xunlei.com")
+    if sidx==-1:
         print("下载地址无效",hdiv.text)
         return False
 
-    mv.pub_down_url = hdiv.text[hdiv.text.find("magnet:"):]
+    mv.pub_down_url = hdiv.text[sidx:]
+    if(len(mv.pub_down_url)>1000):
+        print("下载地址无效2" ,len(mv.pub_down_url),mv.pub_down_url)
+        return False
     td = hdiv.parent.parent
     links = td.find_all("a")
 

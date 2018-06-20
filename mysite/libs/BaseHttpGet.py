@@ -105,8 +105,8 @@ class BaseHttpGet(object):
                 self.headers["HTTP_X_FORWARDED_FOR"] = self._randomIp()
                 self.headers["HTTP_CF_CONNECTING_IP"] = self._randomIp()
                 requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
-                r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False,timeout=6)
-                r.encoding = self.encoding
+                r = requests.get(self.url, headers=self.headers, proxies=proxies, allow_redirects=True, verify=False,timeout=10)
+                #r.encoding = self.encoding
                 ipm.check_time = int(time.time())
                 ipm.last_use_time = int(time.time())
                 ipm.errorCount = 0

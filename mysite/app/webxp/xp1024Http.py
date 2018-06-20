@@ -56,6 +56,7 @@ class xp1024_list_crawer(BaseHttpGet.BaseHttpGet):
                 info.mv=mv
                 #放入ID，避免重复
                 info.id=pub_id
+                #print("pub_id",pub_id)
                 BaseHttpGet.pushHttpGet(info)
 
 
@@ -107,33 +108,41 @@ class xp1024_info_crawer(BaseHttpGet.BaseHttpGet):
                 self.mv.pub_content = divtext[cstart:cend]
             # 图片地址
             imgs = div.find_all("img")
+            if imgs is None:
+                print("影片没有图片，获取失败1", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
+                return True
+            self.mv.pub_img_count=len(imgs)
             if (len(imgs) > 0):
                 self.mv.pub_img_url = imgs[0].get("src")
+
+            if(self.mv.pub_img_url is None):
+                print("影片没有图片，获取失败2", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
+                return True
+            # 如果图片小于50K则过滤掉
+            if (len(self.mv.pub_img_url) < 5):
+                print("影片没有图片，获取失败3", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
+                return True
+            imgsize = getRemoteFileSize(self.mv.pub_img_url)
+            if imgsize == 0:
+                print("影片的图片获取失败，资源可能已失效", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
+                self.err_count = self.err_count + 1
+                return False
+            self.mv.pub_img_size = imgsize
             # 下载地址
             links = div.find_all("a")
             for a in links:
                 link = a.get("href")
                 if (link.find("torrent") > 0):
                     self.mv.pub_down_url = link
-            # 如果图片小于50K则过滤掉
-            if(len(self.mv.pub_img_url)<5):
-                print("影片没有图片，获取失败", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
+            if self.mv.pub_down_url is None or len(self.mv.pub_down_url)<10:
+                print("影片下载地址获取失败1", self.mv.pub_down_url, self.mv.pub_info_url, FILTER_COUNT)
                 return True
-
-            imgsize = getRemoteFileSize(self.mv.pub_img_url)
-            if imgsize ==0 :
-                print("影片的图片获取失败，资源可能已失效", self.mv.pub_img_url, self.mv.pub_info_url, FILTER_COUNT)
-                self.err_count = self.err_count + 1
-                return False
-            self.mv.pub_img_size=imgsize
-
-
-            #读取下一个
+            #读取下载地址
             if(query_xp_torrent(self.mv)):
                 #解析种子成功，则保存
                 self.mv.save()
             else:
-                print("获取下载种子地址失败", self.mv.pub_down_url, self.mv.pub_info_url, FILTER_COUNT)
+                print("获取下载种子地址失败2", self.mv.pub_down_url, self.mv.pub_info_url, FILTER_COUNT)
                 self.err_count = self.err_count + 1
                 return False
 
@@ -160,14 +169,19 @@ def getRemoteFileSize(url):
 
 #查询下载链接
 def query_xp_torrent(mv=None):
-    r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers,timeout=10)
-    html = r.content.decode("utf-8", 'replace')
-    soup = BeautifulSoup(html, "lxml")
-    links=soup.find_all("a")
-    for a in links:
-        link = a.get("href")
-        if(link.find("magnet:")!=-1):
-            mv.pub_down_url = link
-            return True
-    pass
+    try:
+        r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers, timeout=10)
+        html = r.content.decode("utf-8", 'replace')
+        soup = BeautifulSoup(html, "lxml")
+        links = soup.find_all("a")
+        for a in links:
+            link = a.get("href")
+            if (link.find("magnet:") != -1):
+                mv.pub_down_url = link
+                return True
+        pass
+    except Exception as e:  # 远程文件不存在
+
+        return False
+
     return False
