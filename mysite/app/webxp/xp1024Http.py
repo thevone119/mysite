@@ -137,6 +137,8 @@ class xp1024_info_crawer(BaseHttpGet.BaseHttpGet):
                 link = a.get("href")
                 if (link.find("torrent") > 0):
                     self.mv.pub_down_url = link
+                if (link.find("updowm/file.php/") > 0):
+                    self.mv.pub_down_url = link
             if self.mv.pub_down_url is None or len(self.mv.pub_down_url)<10:
                 print("影片下载地址获取失败1", self.mv.pub_down_url, self.mv.pub_info_url, FILTER_COUNT)
                 return True
@@ -179,18 +181,41 @@ def query_xp_torrent(mv=None):
             mv.pub_down_url = "magnet:?xt=urn:btih:" + mv.pub_down_url[mv.pub_down_url.find("torrent")+8:]
             print(mv.pub_down_url)
             return True
-        r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers, timeout=10)
-        html = r.content.decode("utf-8", 'replace')
-        soup = BeautifulSoup(html, "lxml")
-        links = soup.find_all("a")
-        for a in links:
-            link = a.get("href")
-            if (link.find("magnet:") != -1):
-                mv.pub_down_url = link
-                return True
+        #如果是下载地址，则下载种子
+        if (mv.pub_down_url.find("updowm/file.php/") > 0):
+
+
+            r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers, timeout=10)
+            html = r.content.decode("utf-8", 'replace')
+            soup = BeautifulSoup(html, "lxml")
+
+
+            down_id = soup.find("input",id="id").get("value")
+            down_name = soup.find("input", id="name").get("value")
+            down_type = soup.find("input", id="type").get("value")
+            d = {'id': down_id, 'name': down_name,'type':down_type}
+
+            #下载资源
+            headers2 = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                'Referer': mv.pub_down_url
+            }
+            down_url=  mv.pub_down_url[0:mv.pub_down_url.find("file.php")]+"down.php"
+            print("开始下载种子",down_url)
+            down_r = BaseHttpGet.getSessionPool().post(down_url,data=d, headers=headers2, timeout=15)
+
+            if(len(down_r.content)<10):
+                print("下载种子失败")
+                return False
+
+            fileObject = open('d:/moviedata/torrent/1024xp_'+mv.pub_id+".torrent", 'wb')
+            fileObject.write(down_r.content)
+            fileObject.close()
+            return True
+
         pass
     except Exception as e:  # 远程文件不存在
-
+        print("下载种子失败",e)
         return False
 
     return False
