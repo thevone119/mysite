@@ -2,7 +2,9 @@
 import time
 from bs4 import BeautifulSoup
 from mysite.libs import BaseHttpGet
+from mysite.libs import BTBencode
 from mysite.app.webxp import models
+
 
 headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
@@ -208,10 +210,14 @@ def query_xp_torrent(mv=None):
                 print("下载种子失败")
                 return False
 
+
             fileObject = open('d:/moviedata/torrent/1024xp_'+mv.pub_id+".torrent", 'wb')
             fileObject.write(down_r.content)
             fileObject.flush()
             fileObject.close()
+            #把种子转换成磁性链接
+            down_r.pub_down_url = BTBencode.BTByteToCode(down_r.content)
+            print("种子已转换为磁性链接", down_r.pub_down_url)
             return True
 
         pass
