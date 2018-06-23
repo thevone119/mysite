@@ -210,6 +210,7 @@ def query_xp_torrent(mv=None):
 
             fileObject = open('d:/moviedata/torrent/1024xp_'+mv.pub_id+".torrent", 'wb')
             fileObject.write(down_r.content)
+            fileObject.flush()
             fileObject.close()
             return True
 
