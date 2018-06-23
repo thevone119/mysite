@@ -12,7 +12,7 @@ from mysite.app.webxp import xp1024Http
 
 
 #网站的跟路径
-xp_base_url="http://d2.sku117.info"
+xp_base_url="http://n2.lufi99.org"
 
 sched = BlockingScheduler()
 

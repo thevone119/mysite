@@ -9,7 +9,7 @@ headers = {
     }
 
 #网站的跟路径
-xp_base_url="http://d2.sku117.info"
+xp_base_url="http://n2.lufi99.org"
 FILTER_COUNT=0 #过滤的总数
 #抓取列表
 class xp1024_list_crawer(BaseHttpGet.BaseHttpGet):
@@ -89,6 +89,9 @@ class xp1024_info_crawer(BaseHttpGet.BaseHttpGet):
             html = response.content.decode("utf-8", 'replace')
             soup = BeautifulSoup(html, "lxml")
             div = soup.find("div", id="read_tpc")
+            if div is None:
+                print("解析资源出错，DIV为空", self.mv.pub_info_url)
+                print("解析资源出错，DIV为空", html)
             divtext = str(div)
             #print(divtext)
             cstart = divtext.find("read_tpc\">")
@@ -170,6 +173,12 @@ def getRemoteFileSize(url):
 #查询下载链接
 def query_xp_torrent(mv=None):
     try:
+        #如果下载地址是种子，则截取种子HASH码
+        #http://www1.downsx.net/torrent/D27DF676675F54E82A2294FE71AAE720F45B6634
+        if(mv.pub_down_url.find("torrent")!=-1):
+            mv.pub_down_url = "magnet:?xt=urn:btih:" + mv.pub_down_url[mv.pub_down_url.find("torrent")+8:]
+            print(mv.pub_down_url)
+            return True
         r = BaseHttpGet.getSessionPool().get(mv.pub_down_url, headers=headers, timeout=10)
         html = r.content.decode("utf-8", 'replace')
         soup = BeautifulSoup(html, "lxml")
